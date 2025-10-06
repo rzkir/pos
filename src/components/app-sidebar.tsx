@@ -1,0 +1,122 @@
+"use client"
+
+import * as React from "react"
+
+import {
+  AudioWaveform,
+  Command,
+  Frame,
+  GalleryVerticalEnd,
+  Map,
+  PieChart,
+} from "lucide-react"
+
+import { NavMain } from "@/components/nav-main"
+
+import { NavProjects } from "@/components/nav-projects"
+
+import { NavUser } from "@/components/nav-user"
+
+import { TeamSwitcher } from "@/components/team-switcher"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+
+import { superAdminsNav } from "@/components/layout/super-admins/data/super-admins"
+
+import { adminsNav } from "@/components/layout/admins/data/admins"
+
+import { karyawanNav } from "@/components/layout/karyawan/data/karyawan"
+
+import { useAuth } from "@/context/AuthContext"
+
+const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+
+  teams: [
+    {
+      name: "Acme Inc",
+      logo: GalleryVerticalEnd,
+      plan: "Enterprise",
+    },
+    {
+      name: "Acme Corp.",
+      logo: AudioWaveform,
+      plan: "Startup",
+    },
+    {
+      name: "Evil Corp.",
+      logo: Command,
+      plan: "Free",
+    },
+  ],
+  projects: [
+    {
+      name: "Design Engineering",
+      url: "#",
+      icon: Frame,
+    },
+    {
+      name: "Sales & Marketing",
+      url: "#",
+      icon: PieChart,
+    },
+    {
+      name: "Travel",
+      url: "#",
+      icon: Map,
+    },
+  ],
+}
+
+export function AppSidebar({ role, ...props }: React.ComponentProps<typeof Sidebar> & { role?: 'super-admins' | 'admins' | 'karyawan' }) {
+  const { user: authUser, profile } = useAuth()
+  // Choose nav items based on role with safe fallback
+  const navForRole = React.useMemo(() => {
+    switch (role) {
+      case 'super-admins':
+        return superAdminsNav;
+      case 'admins':
+        return adminsNav;
+      case 'karyawan':
+        return karyawanNav;
+      default:
+        return adminsNav; // default fallback
+    }
+  }, [role]);
+
+  const navUserData = React.useMemo(() => {
+    const nameFromProfile = profile?.display_name
+    const emailFromProfile = profile?.email || authUser?.email || data.user.email
+    const nameFromEmail = (emailFromProfile || '').split('@')[0] || data.user.name
+    return {
+      name: nameFromProfile || nameFromEmail,
+      email: emailFromProfile || data.user.email,
+      avatar: profile?.photo_url || data.user.avatar,
+    }
+  }, [profile, authUser])
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <TeamSwitcher teams={data.teams} />
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navForRole} />
+        <NavProjects projects={data.projects} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={navUserData} />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}
