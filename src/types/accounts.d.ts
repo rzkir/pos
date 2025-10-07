@@ -5,6 +5,7 @@ export interface Accounts {
   role: "super-admins" | "admins" | "karyawan";
   display_name: string;
   email: string;
+  durasi: string;
   photo_url?: string;
   created_at?: string;
   updated_at?: string;
@@ -30,8 +31,12 @@ export interface AuthContextType {
   handleLogin: (email: string, password: string) => Promise<void>;
   clearForm: () => void;
 
-  // New unified auth handlers
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (params: { fullName: string; email: string; password: string; role?: Accounts['role'] }) => Promise<void>;
+  signUp: (params: {
+    fullName: string;
+    email: string;
+    password: string;
+    role?: Accounts["role"];
+  }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }

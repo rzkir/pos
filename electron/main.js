@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, session } from "electron";
 
 import path from "path";
 
@@ -123,6 +123,18 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Allow camera access inside Electron for getUserMedia
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback) => {
+      if (permission === "media") {
+        // Allow only video (camera), block audio by default
+        callback(true);
+        return;
+      }
+      callback(false);
+    }
+  );
+
   createWindow();
 
   app.on("activate", () => {

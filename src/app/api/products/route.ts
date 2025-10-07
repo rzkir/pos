@@ -2,9 +2,40 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminServerClient } from "@/lib/supabase";
 
 // GET - Fetch all products
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminServerClient();
+    const { searchParams } = new URL(request.url);
+    const barcode = searchParams.get("barcode");
+
+    if (barcode && barcode.trim() !== "") {
+      const { data: product, error } = await supabase
+        .from("products")
+        .select(
+          `
+          *,
+          product_categories(name),
+          product_sizes(name)
+        `
+        )
+        .eq("barcode", barcode)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching product by barcode:", error);
+        return NextResponse.json(
+          { error: "Failed to fetch product by barcode" },
+          { status: 500 }
+        );
+      }
+
+      if (!product) {
+        return NextResponse.json({ product: null }, { status: 200 });
+      }
+
+      return NextResponse.json({ product }, { status: 200 });
+    }
 
     const { data: products, error } = await supabase
       .from("products")
@@ -12,7 +43,6 @@ export async function GET() {
         `
         *,
         product_categories(name),
-        product_types(name),
         product_sizes(name)
       `
       )
@@ -44,12 +74,13 @@ export async function POST(request: NextRequest) {
     const {
       name,
       price,
+      modal,
       stock,
       image_url,
       category_id,
-      type_id,
       size_id,
       barcode,
+      uid,
     } = body;
 
     if (!name || name.trim() === "") {
@@ -73,25 +104,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!uid || typeof uid !== "string") {
+      return NextResponse.json(
+        { error: "User context missing (uid)" },
+        { status: 400 }
+      );
+    }
+
     const { data: product, error } = await supabase
       .from("products")
       .insert([
         {
           name: name.trim(),
           price: parseFloat(price),
+          modal:
+            modal !== undefined && modal !== null ? parseFloat(modal) : null,
           stock: parseInt(stock),
+          sold: 0,
           image_url: image_url || null,
           category_id: category_id || null,
-          type_id: type_id || null,
           size_id: size_id || null,
           barcode: barcode || null,
+          uid,
         },
       ])
       .select(
         `
         *,
         product_categories(name),
-        product_types(name),
         product_sizes(name)
       `
       )

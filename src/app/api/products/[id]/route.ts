@@ -17,7 +17,6 @@ export async function GET(
         `
         *,
         product_categories(name),
-        product_types(name),
         product_sizes(name)
       `
       )
@@ -54,7 +53,6 @@ export async function PUT(
       stock,
       image_url,
       category_id,
-      type_id,
       size_id,
       barcode,
       is_active,
@@ -89,7 +87,6 @@ export async function PUT(
         stock: parseInt(stock),
         image_url: image_url || null,
         category_id: category_id || null,
-        type_id: type_id || null,
         size_id: size_id || null,
         barcode: barcode || null,
         is_active: is_active !== undefined ? is_active : true,
@@ -99,7 +96,6 @@ export async function PUT(
         `
         *,
         product_categories(name),
-        product_types(name),
         product_sizes(name)
       `
       )
@@ -122,6 +118,48 @@ export async function PUT(
     return NextResponse.json({ product });
   } catch (error) {
     console.error("Error in PUT /api/products/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Increment sold and decrement stock for a product (transaction hook)
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = createAdminServerClient();
+    const { id } = await params;
+    const body = await request.json();
+    const qty = parseInt(body?.qty ?? 0);
+
+    if (!qty || qty <= 0) {
+      return NextResponse.json(
+        { error: "qty must be a positive integer" },
+        { status: 400 }
+      );
+    }
+
+    // Call SQL function to atomically update
+    const { data, error } = await supabase.rpc("increment_product_sold", {
+      p_product_id: parseInt(id),
+      p_qty: qty,
+    });
+
+    if (error) {
+      console.error("Error incrementing sold:", error);
+      return NextResponse.json(
+        { error: error.message || "Failed to increment sold" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ result: data });
+  } catch (error) {
+    console.error("Error in POST /api/products/[id] (increment sold):", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

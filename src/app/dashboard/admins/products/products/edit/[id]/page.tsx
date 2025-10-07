@@ -2,11 +2,11 @@ import React from 'react'
 
 import { Metadata } from 'next'
 
-import CreateProducts from '@/components/dashboard/admins/products/products/create/CreateProducts'
+import EditProducts from '@/components/dashboard/admins/products/products/edit/EditProducts'
 
 export const metadata: Metadata = {
-    title: 'Create Products | POS System',
-    description: 'Create Products untuk sistem Point of Sale',
+    title: 'Edit Products | POS System',
+    description: 'Edit Products untuk sistem Point of Sale',
 }
 
 interface PageProps {
@@ -18,6 +18,6 @@ interface PageProps {
 export default async function page({ params }: PageProps) {
     const { id } = await params
     return (
-        <CreateProducts id={id} />
+        <EditProducts id={id} />
     )
 }

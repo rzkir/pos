@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
@@ -14,6 +15,7 @@ export default function SignInPage() {
     const { signIn, loadingLogin } = useAuth()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -67,7 +69,14 @@ export default function SignInPage() {
 
                         <div className="space-y-1">
                             <label className="text-sm font-medium" htmlFor="password">Password</label>
-                            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                            <PasswordInput
+                                id="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                showPassword={showPassword}
+                                onToggleVisibility={() => setShowPassword(!showPassword)}
+                            />
                         </div>
                         <Button className="w-full h-10 rounded-md" type="submit" disabled={loadingLogin}>{loadingLogin ? 'LOGGING IN...' : 'LOG IN'}</Button>
                     </form>

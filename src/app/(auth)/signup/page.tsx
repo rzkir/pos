@@ -7,6 +7,8 @@ import Link from 'next/link'
 
 import { Input } from '@/components/ui/input'
 
+import { PasswordInput } from '@/components/ui/password-input'
+
 import { Button } from '@/components/ui/button'
 
 import { useAuth } from '@/context/AuthContext'
@@ -16,10 +18,17 @@ export default function SignUpPage() {
     const [fullName, setFullName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if (!email || !password || !fullName) return
+        if (!email || !password || !fullName || !confirmPassword) return
+        if (password !== confirmPassword) {
+            alert("Passwords do not match!")
+            return
+        }
         await signUp({ fullName, email, password })
     }
     return (
@@ -71,7 +80,25 @@ export default function SignUpPage() {
                         </div>
                         <div className="space-y-1">
                             <label className="text-sm font-medium" htmlFor="password">Password</label>
-                            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                            <PasswordInput
+                                id="password"
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                showPassword={showPassword}
+                                onToggleVisibility={() => setShowPassword(!showPassword)}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium" htmlFor="confirmPassword">Confirm Password</label>
+                            <PasswordInput
+                                id="confirmPassword"
+                                placeholder="••••••••"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                showPassword={showConfirmPassword}
+                                onToggleVisibility={() => setShowConfirmPassword(!showConfirmPassword)}
+                            />
                         </div>
                         <Button className="w-full h-10 rounded-md" type="submit" disabled={loadingLogin}>{loadingLogin ? 'CREATING...' : 'CREATE ACCOUNT'}</Button>
                     </form>

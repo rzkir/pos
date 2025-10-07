@@ -26,7 +26,6 @@ export const adminsNav = [
     items: [
       { title: "Daftar Produk", url: "/dashboard/admins/products/products" },
       { title: "Kategori", url: "/dashboard/admins/products/categories" },
-      { title: "Type", url: "/dashboard/admins/products/type" },
       { title: "Size", url: "/dashboard/admins/products/size" },
     ],
   },
