@@ -14,6 +14,11 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+
+import { useAuth } from "@/context/AuthContext"
+
+import { useRouter } from "next/navigation"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -40,6 +46,8 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
+  const router = useRouter()
 
   return (
     <SidebarMenu>
@@ -102,7 +110,15 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={async () => {
+                try {
+                  await logout();
+                } finally {
+                  router.replace("/signin");
+                }
+              }}
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>

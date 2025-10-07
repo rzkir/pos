@@ -1,0 +1,159 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import { createAdminServerClient } from "@/lib/supabase";
+
+// GET - Fetch single product
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = createAdminServerClient();
+    const { id } = await params;
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .select(
+        `
+        *,
+        product_categories(name),
+        product_types(name),
+        product_sizes(name)
+      `
+      )
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching product:", error);
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ product });
+  } catch (error) {
+    console.error("Error in GET /api/products/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update product
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = createAdminServerClient();
+    const { id } = await params;
+    const body = await request.json();
+    const {
+      name,
+      price,
+      stock,
+      image_url,
+      category_id,
+      type_id,
+      size_id,
+      barcode,
+      is_active,
+    } = body;
+
+    if (!name || name.trim() === "") {
+      return NextResponse.json(
+        { error: "Product name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!price || price < 0) {
+      return NextResponse.json(
+        { error: "Valid price is required" },
+        { status: 400 }
+      );
+    }
+
+    if (stock === undefined || stock < 0) {
+      return NextResponse.json(
+        { error: "Valid stock quantity is required" },
+        { status: 400 }
+      );
+    }
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .update({
+        name: name.trim(),
+        price: parseFloat(price),
+        stock: parseInt(stock),
+        image_url: image_url || null,
+        category_id: category_id || null,
+        type_id: type_id || null,
+        size_id: size_id || null,
+        barcode: barcode || null,
+        is_active: is_active !== undefined ? is_active : true,
+      })
+      .eq("id", id)
+      .select(
+        `
+        *,
+        product_categories(name),
+        product_types(name),
+        product_sizes(name)
+      `
+      )
+      .single();
+
+    if (error) {
+      console.error("Error updating product:", error);
+      if (error.code === "23505") {
+        return NextResponse.json(
+          { error: "Product barcode already exists" },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Failed to update product" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ product });
+  } catch (error) {
+    console.error("Error in PUT /api/products/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete product
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = createAdminServerClient();
+    const { id } = await params;
+
+    const { error } = await supabase.from("products").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error deleting product:", error);
+      return NextResponse.json(
+        { error: "Failed to delete product" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: "Product deleted successfully" });
+  } catch (error) {
+    console.error("Error in DELETE /api/products/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

@@ -8,6 +8,7 @@ export const adminsNav = [
     isActive: true,
     items: [{ title: "Ringkasan", url: "/dashboard/admins" }],
   },
+
   {
     title: "Penjualan",
     url: "/dashboard/admins/sales",
@@ -17,15 +18,19 @@ export const adminsNav = [
       { title: "Riwayat", url: "/dashboard/admins/sales/history" },
     ],
   },
+
   {
     title: "Produk",
     url: "/dashboard/admins/products",
     icon: Package,
     items: [
-      { title: "Daftar Produk", url: "/dashboard/admins/products" },
+      { title: "Daftar Produk", url: "/dashboard/admins/products/products" },
       { title: "Kategori", url: "/dashboard/admins/products/categories" },
+      { title: "Type", url: "/dashboard/admins/products/type" },
+      { title: "Size", url: "/dashboard/admins/products/size" },
     ],
   },
+
   {
     title: "Pengaturan",
     url: "/dashboard/admins/settings",

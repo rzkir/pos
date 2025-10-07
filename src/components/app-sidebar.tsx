@@ -27,11 +27,11 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { superAdminsNav } from "@/components/layout/super-admins/data/super-admins"
+import { superAdminsNav } from "@/components/layout/super-admins/super-admins"
 
-import { adminsNav } from "@/components/layout/admins/data/admins"
+import { adminsNav } from "@/components/layout/admins/admins"
 
-import { karyawanNav } from "@/components/layout/karyawan/data/karyawan"
+import { karyawanNav } from "@/components/layout/karyawan/karyawan"
 
 import { useAuth } from "@/context/AuthContext"
 
