@@ -22,10 +22,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Package, Save, RefreshCw, Hash, X } from "lucide-react";
+import { ArrowLeft, Package, Save, RefreshCw, Hash, X, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+// removed scanner dialog and component
 import Image from "next/image";
 
 interface EditProductsProps {
@@ -42,6 +43,7 @@ export default function EditProducts({ id }: EditProductsProps) {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
+    // removed scanner state
     const [formData, setFormData] = useState({
         name: "",
         price: "",
@@ -383,6 +385,24 @@ export default function EditProducts({ id }: EditProductsProps) {
                                             disabled={barcodeMode === 'auto'}
                                             className="flex-1"
                                         />
+                                        {barcodeMode === 'manual' && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                title="Input manual barcode"
+                                                onClick={() => {
+                                                    const manual = prompt('Masukkan barcode secara manual:');
+                                                    if (manual && manual.trim()) {
+                                                        const digitsOnly = manual.replace(/\D/g, "");
+                                                        setFormData({ ...formData, barcode: digitsOnly });
+                                                        toast.success("Barcode diinput");
+                                                    }
+                                                }}
+                                            >
+                                                <ScanLine className="h-4 w-4" />
+                                            </Button>
+                                        )}
 
                                         {barcodeMode === 'auto' && (
                                             <Button

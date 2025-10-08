@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 
 import {
     Breadcrumb,
@@ -31,7 +31,7 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ArrowLeft, Package, RefreshCw, Hash, X } from "lucide-react";
+import { ArrowLeft, Package, RefreshCw, Hash, X, ScanLine } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -51,14 +51,27 @@ interface CreateProductsProps {
 
 export default function CreateProducts({ id }: CreateProductsProps) {
     const router = useRouter();
+
     const [categories, setCategories] = useState<ProductCategories[]>([]);
+
     const [sizes, setSizes] = useState<ProductSizes[]>([]);
+
     const [submitting, setSubmitting] = useState(false);
+
     const [barcodeMode, setBarcodeMode] = useState<'auto' | 'manual'>('auto');
 
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+
     const [uploadingImage, setUploadingImage] = useState(false);
+
+    // removed scanner dialog state
+
+    const lookupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const [foundProduct, setFoundProduct] = useState<Products | null>(null);
+
     const [formData, setFormData] = useState({
         name: "",
         price: "",
@@ -72,6 +85,13 @@ export default function CreateProducts({ id }: CreateProductsProps) {
     });
 
     const formatNumericInput = (value: string) => value.replace(/\D/g, "");
+
+    const normalizeBarcode = (raw: string) => {
+        const digits = raw.replace(/\D/g, "");
+        if (digits.length >= 13) return digits.slice(-13);
+        if (digits.length === 12 || digits.length === 8) return digits;
+        return digits;
+    };
 
     // Fetch related data
     const fetchData = async () => {
@@ -107,6 +127,27 @@ export default function CreateProducts({ id }: CreateProductsProps) {
         const barcode = `${lastTen}${randomThree}`; // 13 digits
         setFormData(prev => ({ ...prev, barcode }));
     }, []);
+
+    // Look up product by barcode
+    const lookupProductByBarcode = async (barcode: string) => {
+        try {
+            const response = await fetch(`/api/products?barcode=${encodeURIComponent(barcode)}`);
+            const data = await response.json();
+
+            if (response.ok && data.product) {
+                // Product found - store product info and show notification
+                setFoundProduct(data.product);
+                toast.info(`Produk dengan barcode ${barcode} sudah ada: ${data.product.name}`);
+            } else {
+                // Product not found - clear found product
+                setFoundProduct(null);
+                toast.success("Barcode tersedia untuk produk baru");
+            }
+        } catch (error) {
+            console.error('Error looking up product:', error);
+            toast.error("Gagal mencari produk dengan barcode tersebut");
+        }
+    };
 
     // Handle image selection
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,8 +220,37 @@ export default function CreateProducts({ id }: CreateProductsProps) {
         setImagePreview(null);
     };
 
+    // Reset form
+    const resetForm = () => {
+        setFormData({
+            name: "",
+            price: "",
+            modal: "",
+            stock: "",
+            image_url: "",
+            category_id: "",
+            size_id: "",
+            barcode: "",
+            is_active: true,
+        });
+        setSelectedImage(null);
+        setImagePreview(null);
+        setFoundProduct(null);
+        if (barcodeMode === 'auto') {
+            generateBarcode();
+        }
+        toast.success("Form telah direset");
+    };
+
     useEffect(() => {
         fetchData();
+
+        // Cleanup timeout on unmount
+        return () => {
+            if (lookupTimeoutRef.current) {
+                clearTimeout(lookupTimeoutRef.current);
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -255,6 +325,7 @@ export default function CreateProducts({ id }: CreateProductsProps) {
 
             if (response.ok) {
                 toast.success("Product created successfully");
+                setFoundProduct(null); // Clear found product after successful creation
                 router.push("/dashboard/admins/products/products");
             } else {
                 const message = (data && (data.error || data.message)) || "Failed to create product";
@@ -343,6 +414,7 @@ export default function CreateProducts({ id }: CreateProductsProps) {
                                                 value={barcodeMode}
                                                 onValueChange={(value: 'auto' | 'manual') => {
                                                     setBarcodeMode(value);
+                                                    setFoundProduct(null); // Clear found product when mode changes
                                                     if (value === 'auto') {
                                                         generateBarcode();
                                                     } else {
@@ -371,11 +443,49 @@ export default function CreateProducts({ id }: CreateProductsProps) {
                                             <Input
                                                 id="barcode"
                                                 value={formData.barcode}
-                                                onChange={(e) => setFormData({ ...formData, barcode: e.target.value.replace(/\D/g, "") })}
+                                                onChange={(e) => {
+                                                    const normalizedCode = normalizeBarcode(e.target.value);
+                                                    setFormData({ ...formData, barcode: normalizedCode });
+
+                                                    setFoundProduct(null);
+
+                                                    // Clear previous timeout
+                                                    if (lookupTimeoutRef.current) {
+                                                        clearTimeout(lookupTimeoutRef.current);
+                                                    }
+
+                                                    // Auto-lookup product if barcode is complete (8+ digits) with debounce
+                                                    if (barcodeMode === 'manual' && normalizedCode.length >= 8) {
+                                                        lookupTimeoutRef.current = setTimeout(async () => {
+                                                            await lookupProductByBarcode(normalizedCode);
+                                                        }, 1000); // 1 second delay
+                                                    }
+                                                }}
                                                 placeholder={barcodeMode === 'auto' ? "Auto generated" : "Scan / ketik barcode angka"}
                                                 disabled={barcodeMode === 'auto'}
                                                 className="flex-1"
                                             />
+
+                                            {barcodeMode === 'manual' && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    title="Input manual barcode"
+                                                    onClick={() => {
+                                                        const manual = prompt('Masukkan barcode secara manual:');
+                                                        if (manual && manual.trim()) {
+                                                            const normalizedCode = normalizeBarcode(manual);
+                                                            setFormData({ ...formData, barcode: normalizedCode });
+                                                            setFoundProduct(null);
+                                                            toast.success("Barcode diinput");
+                                                            lookupProductByBarcode(normalizedCode);
+                                                        }
+                                                    }}
+                                                >
+                                                    <ScanLine className="h-4 w-4" />
+                                                </Button>
+                                            )}
 
                                             {barcodeMode === 'auto' && (
                                                 <Button
@@ -391,10 +501,60 @@ export default function CreateProducts({ id }: CreateProductsProps) {
                                         </div>
                                         <p className="text-xs text-muted-foreground">
                                             {barcodeMode === 'manual'
-                                                ? "Masukkan barcode manual (tidak auto-lookup)"
+                                                ? "Scan barcode atau ketik manual. Jika produk sudah ada, data akan dimuat otomatis."
                                                 : "Barcode akan dibuat otomatis"
                                             }
                                         </p>
+
+                                        {/* Show found product info */}
+                                        {foundProduct && barcodeMode === 'manual' && (
+                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-blue-900">
+                                                            Produk ditemukan: {foundProduct.name}
+                                                        </p>
+                                                        <p className="text-xs text-blue-700">
+                                                            Harga: {formatIdr(foundProduct.price)} |
+                                                            Stock: {foundProduct.stock} |
+                                                            Modal: {formatIdr(foundProduct.modal)}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                setFormData({
+                                                                    name: foundProduct.name,
+                                                                    price: foundProduct.price.toString(),
+                                                                    modal: foundProduct.modal.toString(),
+                                                                    stock: foundProduct.stock.toString(),
+                                                                    image_url: foundProduct.image_url || "",
+                                                                    category_id: foundProduct.category_id?.toString() || "",
+                                                                    size_id: foundProduct.size_id?.toString() || "",
+                                                                    barcode: foundProduct.barcode,
+                                                                    is_active: foundProduct.is_active,
+                                                                });
+                                                                setFoundProduct(null);
+                                                                toast.success("Data produk dimuat");
+                                                            }}
+                                                        >
+                                                            Gunakan Data
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => setFoundProduct(null)}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -574,17 +734,26 @@ export default function CreateProducts({ id }: CreateProductsProps) {
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-2">
+                                <div className="flex justify-between">
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() => router.back()}
+                                        onClick={resetForm}
                                     >
-                                        Cancel
+                                        Reset Form
                                     </Button>
-                                    <Button type="submit" disabled={submitting || uploadingImage}>
-                                        {submitting ? "Creating..." : uploadingImage ? "Uploading..." : "Create Product"}
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => router.back()}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" disabled={submitting || uploadingImage}>
+                                            {submitting ? "Creating..." : uploadingImage ? "Uploading..." : "Create Product"}
+                                        </Button>
+                                    </div>
                                 </div>
                             </form>
                         }

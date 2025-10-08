@@ -14,7 +14,13 @@
   "mac": {
     "category": "public.app-category.productivity",
     "target": "dmg",
-    "icon": "public/logo.png"
+    "icon": "public/logo.png",
+    "entitlements": "electron/entitlements.mac.plist",
+    "entitlementsInherit": "electron/entitlements.mac.plist",
+    "extendInfo": {
+      "NSCameraUsageDescription": "Aplikasi membutuhkan akses kamera untuk scan barcode.",
+      "NSMicrophoneUsageDescription": "Tidak digunakan."
+    }
   },
   "win": {
     "target": "nsis",

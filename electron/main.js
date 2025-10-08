@@ -125,13 +125,29 @@ function createWindow() {
 app.whenReady().then(() => {
   // Allow camera access inside Electron for getUserMedia
   session.defaultSession.setPermissionRequestHandler(
-    (webContents, permission, callback) => {
-      if (permission === "media") {
-        // Allow only video (camera), block audio by default
-        callback(true);
-        return;
+    (webContents, permission, callback, details) => {
+      if (permission === "media" || permission === "camera") {
+        // Only allow from our app URL
+        const url = webContents.getURL();
+        const isLocalhost = url.startsWith("http://localhost:");
+        const isFile = url.startsWith("file:");
+        if (isLocalhost || isFile) {
+          callback(true);
+          return;
+        }
       }
       callback(false);
+    }
+  );
+
+  // Also handle legacy permission check
+  session.defaultSession.setPermissionCheckHandler(
+    (webContents, permission) => {
+      if (permission === "media" || permission === "camera") {
+        const url = webContents?.getURL?.() || "";
+        return url.startsWith("http://localhost:") || url.startsWith("file:");
+      }
+      return false;
     }
   );
 
