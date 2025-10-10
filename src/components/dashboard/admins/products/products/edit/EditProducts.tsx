@@ -22,7 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Package, Save, RefreshCw, Hash, X, ScanLine } from "lucide-react";
+import { ArrowLeft, Package, Save, RefreshCw, Hash, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
@@ -49,6 +49,7 @@ export default function EditProducts({ id }: EditProductsProps) {
         price: "",
         modal: "",
         stock: "",
+        unit: "pcs",
         image_url: "",
         category_id: "",
 
@@ -80,6 +81,7 @@ export default function EditProducts({ id }: EditProductsProps) {
                     price: product.price.toString(),
                     modal: product.modal.toString(),
                     stock: product.stock.toString(),
+                    unit: product.unit || "pcs",
                     image_url: product.image_url || "",
                     category_id: product.category_id?.toString() || "",
 
@@ -381,28 +383,10 @@ export default function EditProducts({ id }: EditProductsProps) {
                                                 const digitsOnly = e.target.value.replace(/\D/g, "");
                                                 setFormData({ ...formData, barcode: digitsOnly });
                                             }}
-                                            placeholder={barcodeMode === 'auto' ? "Auto generated" : "Enter numeric barcode (auto-generated if empty)"}
+                                            placeholder={barcodeMode === 'auto' ? "Auto generated" : "Enter numeric barcode"}
                                             disabled={barcodeMode === 'auto'}
                                             className="flex-1"
                                         />
-                                        {barcodeMode === 'manual' && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                title="Input manual barcode"
-                                                onClick={() => {
-                                                    const manual = prompt('Masukkan barcode secara manual:');
-                                                    if (manual && manual.trim()) {
-                                                        const digitsOnly = manual.replace(/\D/g, "");
-                                                        setFormData({ ...formData, barcode: digitsOnly });
-                                                        toast.success("Barcode diinput");
-                                                    }
-                                                }}
-                                            >
-                                                <ScanLine className="h-4 w-4" />
-                                            </Button>
-                                        )}
 
                                         {barcodeMode === 'auto' && (
                                             <Button
@@ -418,7 +402,7 @@ export default function EditProducts({ id }: EditProductsProps) {
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         {barcodeMode === 'manual'
-                                            ? "Leave empty to auto-generate barcode"
+                                            ? "Enter barcode manually"
                                             : "Barcode will be generated automatically"
                                         }
                                     </p>
@@ -463,6 +447,29 @@ export default function EditProducts({ id }: EditProductsProps) {
                                         placeholder="0"
                                         required
                                     />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="unit">Unit *</Label>
+                                    <Select
+                                        value={formData.unit}
+                                        onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select unit" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="pcs">Pcs</SelectItem>
+                                            <SelectItem value="kg">Kg</SelectItem>
+                                            <SelectItem value="liter">Liter</SelectItem>
+                                            <SelectItem value="pack">Pack</SelectItem>
+                                            <SelectItem value="botol">Botol</SelectItem>
+                                            <SelectItem value="bungkus">Bungkus</SelectItem>
+                                            <SelectItem value="box">Box</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 

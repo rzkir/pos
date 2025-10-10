@@ -156,6 +156,7 @@ export default function Products() {
                                 <TableHead>Price</TableHead>
                                 <TableHead>Modal</TableHead>
                                 <TableHead>Stock</TableHead>
+                                <TableHead>Unit</TableHead>
                                 <TableHead>Sold</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Size</TableHead>
@@ -166,13 +167,13 @@ export default function Products() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="text-center py-8">
+                                    <TableCell colSpan={11} className="text-center py-8">
                                         Loading products...
                                     </TableCell>
                                 </TableRow>
                             ) : products.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="text-center py-8">
+                                    <TableCell colSpan={11} className="text-center py-8">
                                         No products found. Create your first product!
                                     </TableCell>
                                 </TableRow>
@@ -197,6 +198,11 @@ export default function Products() {
                                         <TableCell>{formatIdr(product.price)}</TableCell>
                                         <TableCell>{formatIdr(product.modal)}</TableCell>
                                         <TableCell>{product.stock}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">
+                                                {product.unit || "pcs"}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>{product.sold}</TableCell>
                                         <TableCell>{product.product_categories?.name || "-"}</TableCell>
                                         <TableCell>{product.product_sizes?.name || "-"}</TableCell>

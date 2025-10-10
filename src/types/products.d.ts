@@ -6,6 +6,7 @@ interface Products {
   modal: number;
   stock: number;
   sold: number;
+  unit: string;
   image_url: string;
   category_id?: number;
   size_id?: number;

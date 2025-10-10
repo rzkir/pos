@@ -18,7 +18,6 @@
     "entitlements": "electron/entitlements.mac.plist",
     "entitlementsInherit": "electron/entitlements.mac.plist",
     "extendInfo": {
-      "NSCameraUsageDescription": "Aplikasi membutuhkan akses kamera untuk scan barcode.",
       "NSMicrophoneUsageDescription": "Tidak digunakan."
     }
   },

@@ -1,41 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+
+import { SupabaseClient } from "@supabase/supabase-js";
+
 import { createAdminServerClient } from "@/lib/supabase";
 
 // GET - Fetch all products
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const supabase = createAdminServerClient();
-    const { searchParams } = new URL(request.url);
-    const barcode = searchParams.get("barcode");
-
-    if (barcode && barcode.trim() !== "") {
-      const { data: product, error } = await supabase
-        .from("products")
-        .select(
-          `
-          *,
-          product_categories(name),
-          product_sizes(name)
-        `
-        )
-        .eq("barcode", barcode)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching product by barcode:", error);
-        return NextResponse.json(
-          { error: "Failed to fetch product by barcode" },
-          { status: 500 }
-        );
-      }
-
-      if (!product) {
-        return NextResponse.json({ product: null }, { status: 200 });
-      }
-
-      return NextResponse.json({ product }, { status: 200 });
-    }
+    const supabase: SupabaseClient = createAdminServerClient();
 
     const { data: products, error } = await supabase
       .from("products")
@@ -69,13 +41,14 @@ export async function GET(request: NextRequest) {
 // POST - Create new product
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminServerClient();
+    const supabase: SupabaseClient = createAdminServerClient();
     const body = await request.json();
     const {
       name,
       price,
       modal,
       stock,
+      unit,
       image_url,
       category_id,
       size_id,
@@ -120,6 +93,7 @@ export async function POST(request: NextRequest) {
           modal:
             modal !== undefined && modal !== null ? parseFloat(modal) : null,
           stock: parseInt(stock),
+          unit: unit || "pcs",
           sold: 0,
           image_url: image_url || null,
           category_id: category_id || null,

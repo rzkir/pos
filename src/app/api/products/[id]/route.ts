@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 import { createAdminServerClient } from "@/lib/supabase";
 
@@ -8,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createAdminServerClient();
+    const supabase: SupabaseClient = createAdminServerClient();
     const { id } = await params;
 
     const { data: product, error } = await supabase
@@ -44,13 +45,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createAdminServerClient();
+    const supabase: SupabaseClient = createAdminServerClient();
     const { id } = await params;
     const body = await request.json();
     const {
       name,
       price,
       stock,
+      unit,
       image_url,
       category_id,
       size_id,
@@ -85,6 +87,7 @@ export async function PUT(
         name: name.trim(),
         price: parseFloat(price),
         stock: parseInt(stock),
+        unit: unit || "pcs",
         image_url: image_url || null,
         category_id: category_id || null,
         size_id: size_id || null,
@@ -131,7 +134,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createAdminServerClient();
+    const supabase: SupabaseClient = createAdminServerClient();
     const { id } = await params;
     const body = await request.json();
     const qty = parseInt(body?.qty ?? 0);
@@ -173,7 +176,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = createAdminServerClient();
+    const supabase: SupabaseClient = createAdminServerClient();
     const { id } = await params;
 
     const { error } = await supabase.from("products").delete().eq("id", id);
