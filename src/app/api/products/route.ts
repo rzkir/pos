@@ -15,7 +15,8 @@ export async function GET() {
         `
         *,
         product_categories(name),
-        product_sizes(name)
+        product_sizes(name),
+        suppliers(name)
       `
       )
       .order("created_at", { ascending: false });
@@ -54,6 +55,15 @@ export async function POST(request: NextRequest) {
       size_id,
       barcode,
       uid,
+      // Tambahan penting
+      sku,
+      min_stock,
+      discount,
+      description,
+      supplier_id,
+      location_id,
+      expiration_date,
+      tax,
     } = body;
 
     if (!name || name.trim() === "") {
@@ -100,13 +110,23 @@ export async function POST(request: NextRequest) {
           size_id: size_id || null,
           barcode: barcode || null,
           uid,
+          // Tambahan penting
+          sku: sku || null,
+          min_stock: min_stock ? parseInt(min_stock) : 0,
+          discount: discount ? parseFloat(discount) : 0,
+          description: description || null,
+          supplier_id: supplier_id || null,
+          location_id: location_id || null,
+          expiration_date: expiration_date || null,
+          tax: tax ? parseFloat(tax) : 0,
         },
       ])
       .select(
         `
         *,
         product_categories(name),
-        product_sizes(name)
+        product_sizes(name),
+        suppliers(name)
       `
       )
       .single();

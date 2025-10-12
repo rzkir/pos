@@ -46,6 +46,7 @@ export async function POST(request: Request) {
     const role = body?.role as
       | "super-admins"
       | "admins"
+      | "manager"
       | "karyawan"
       | undefined;
 

@@ -39,9 +39,14 @@ function hasSupabaseSession(req: NextRequest): boolean {
 
 function getAppRole(
   req: NextRequest
-): "super-admins" | "admins" | "karyawan" | null {
+): "super-admins" | "admins" | "manager" | "karyawan" | null {
   const role = req.cookies.get("app-role")?.value;
-  if (role === "super-admins" || role === "admins" || role === "karyawan")
+  if (
+    role === "super-admins" ||
+    role === "admins" ||
+    role === "manager" ||
+    role === "karyawan"
+  )
     return role;
   return null;
 }
@@ -80,10 +85,12 @@ export function middleware(req: NextRequest) {
       const isAdminsPath = pathname.startsWith("/dashboard/admins");
       const isKaryawanPath = pathname.startsWith("/dashboard/karyawan");
       const isSuperAdminsPath = pathname.startsWith("/dashboard/super-admins");
+      const isManagerPath = pathname.startsWith("/dashboard/manager");
 
       const roleToPath: Record<typeof role, string> = {
         admins: "/dashboard/admins",
         karyawan: "/dashboard/karyawan",
+        manager: "/dashboard/manager",
         "super-admins": "/dashboard/super-admins",
       } as const;
 
@@ -92,6 +99,7 @@ export function middleware(req: NextRequest) {
       const pathMatchesRole =
         (role === "admins" && isAdminsPath) ||
         (role === "karyawan" && isKaryawanPath) ||
+        (role === "manager" && isManagerPath) ||
         (role === "super-admins" && isSuperAdminsPath);
 
       if (!pathMatchesRole) {

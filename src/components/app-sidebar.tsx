@@ -31,6 +31,8 @@ import { superAdminsNav } from "@/components/layout/super-admins/super-admins"
 
 import { adminsNav } from "@/components/layout/admins/admins"
 
+import { managerNav } from "@/components/layout/manager/manager"
+
 import { karyawanNav } from "@/components/layout/karyawan/karyawan"
 
 import { useAuth } from "@/context/AuthContext"
@@ -78,7 +80,7 @@ const data = {
   ],
 }
 
-export function AppSidebar({ role, ...props }: React.ComponentProps<typeof Sidebar> & { role?: 'super-admins' | 'admins' | 'karyawan' }) {
+export function AppSidebar({ role, ...props }: React.ComponentProps<typeof Sidebar> & { role?: 'super-admins' | 'admins' | 'manager' | 'karyawan' }) {
   const { user: authUser, profile } = useAuth()
   // Choose nav items based on role with safe fallback
   const navForRole = React.useMemo(() => {
@@ -87,6 +89,8 @@ export function AppSidebar({ role, ...props }: React.ComponentProps<typeof Sideb
         return superAdminsNav;
       case 'admins':
         return adminsNav;
+      case 'manager':
+        return managerNav;
       case 'karyawan':
         return karyawanNav;
       default:

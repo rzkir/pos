@@ -2,7 +2,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 export interface Accounts {
   uid: string;
-  role: "super-admins" | "admins" | "karyawan";
+  role: "super-admins" | "admins" | "manager" | "karyawan";
   display_name: string;
   email: string;
   durasi: string;

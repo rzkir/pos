@@ -52,9 +52,15 @@ export default function CreateProducts() {
 
     const [sizes, setSizes] = useState<ProductSizes[]>([]);
 
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+    const [locations, setLocations] = useState<Location[]>([]);
+
     const [submitting, setSubmitting] = useState(false);
 
     const [barcodeMode, setBarcodeMode] = useState<'auto' | 'manual'>('auto');
+
+    const [skuMode, setSkuMode] = useState<'auto' | 'manual'>('auto');
 
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
@@ -73,6 +79,15 @@ export default function CreateProducts() {
         size_id: "",
         barcode: "",
         is_active: true,
+        // Tambahan penting
+        sku: "",
+        min_stock: "",
+        discount: "",
+        description: "",
+        supplier_id: "",
+        location_id: "",
+        expiration_date: "",
+        tax: "",
     });
 
     const formatNumericInput = (value: string) => value.replace(/\D/g, "");
@@ -87,14 +102,18 @@ export default function CreateProducts() {
     // Fetch related data
     const fetchData = async () => {
         try {
-            const [categoriesRes, sizesRes] = await Promise.all([
+            const [categoriesRes, sizesRes, suppliersRes, locationsRes] = await Promise.all([
                 fetch("/api/products/categories"),
                 fetch("/api/products/sizes"),
+                fetch("/api/products/suppliers"),
+                fetch("/api/locations"),
             ]);
 
-            const [categoriesData, sizesData] = await Promise.all([
+            const [categoriesData, sizesData, suppliersData, locationsData] = await Promise.all([
                 categoriesRes.json(),
                 sizesRes.json(),
+                suppliersRes.json(),
+                locationsRes.json(),
             ]);
 
             if (categoriesRes.ok) {
@@ -103,6 +122,14 @@ export default function CreateProducts() {
 
             if (sizesRes.ok) {
                 setSizes(sizesData.sizes);
+            }
+
+            if (suppliersRes.ok) {
+                setSuppliers(suppliersData.suppliers || []);
+            }
+
+            if (locationsRes.ok) {
+                setLocations(locationsData.locations || []);
             }
         } catch {
             toast.error("Failed to fetch data");
@@ -117,6 +144,16 @@ export default function CreateProducts() {
         const randomThree = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
         const barcode = `${lastTen}${randomThree}`; // 13 digits
         setFormData(prev => ({ ...prev, barcode }));
+    }, []);
+
+    // Generate SKU automatically
+    const generateSKU = useCallback(() => {
+        // Generate SKU with format: SKU + timestamp + random
+        const timestamp = Date.now().toString();
+        const lastSix = timestamp.slice(-6);
+        const randomTwo = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        const sku = `SKU${lastSix}${randomTwo}`; // SKU + 8 characters
+        setFormData(prev => ({ ...prev, sku }));
     }, []);
 
 
@@ -204,11 +241,23 @@ export default function CreateProducts() {
             size_id: "",
             barcode: "",
             is_active: true,
+            // Tambahan penting
+            sku: "",
+            min_stock: "",
+            discount: "",
+            description: "",
+            supplier_id: "",
+            location_id: "",
+            expiration_date: "",
+            tax: "",
         });
         setSelectedImage(null);
         setImagePreview(null);
         if (barcodeMode === 'auto') {
             generateBarcode();
+        }
+        if (skuMode === 'auto') {
+            generateSKU();
         }
         toast.success("Form telah direset");
     };
@@ -225,6 +274,13 @@ export default function CreateProducts() {
         }
     }, [barcodeMode, generateBarcode]);
 
+    useEffect(() => {
+        // Generate initial SKU if auto mode
+        if (skuMode === 'auto') {
+            generateSKU();
+        }
+    }, [skuMode, generateSKU]);
+
     // Create product
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -237,6 +293,14 @@ export default function CreateProducts() {
                 const timestamp = Date.now().toString();
                 const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
                 finalFormData.barcode = `BC${timestamp.slice(-8)}${random}`;
+            }
+
+            // Generate SKU automatically if empty
+            if (!finalFormData.sku || finalFormData.sku.trim() === '') {
+                const timestamp = Date.now().toString();
+                const lastSix = timestamp.slice(-6);
+                const randomTwo = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+                finalFormData.sku = `SKU${lastSix}${randomTwo}`;
             }
 
             // Coerce numeric fields to numbers before sending
@@ -274,6 +338,10 @@ export default function CreateProducts() {
                     price: parseFloat(finalFormData.price as unknown as string),
                     stock: parseInt(finalFormData.stock as unknown as string, 10),
                     modal: parseFloat(finalFormData.modal as unknown as string),
+                    // handle no_supplier case
+                    supplier_id: finalFormData.supplier_id === "no_supplier" ? "" : finalFormData.supplier_id,
+                    // handle location_id conversion to number
+                    location_id: finalFormData.location_id ? parseInt(finalFormData.location_id, 10) : null,
                     uid,
                 }),
                 signal: controller.signal,
@@ -560,6 +628,185 @@ export default function CreateProducts() {
                                                 <SelectItem value="box">Box</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                </div>
+
+                                {/* Tambahan penting - Additional Fields */}
+                                <div className="space-y-4">
+                                    <div className="border-t pt-4">
+                                        <h3 className="text-lg font-medium mb-4">Additional Information</h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="sku">SKU (Internal Code)</Label>
+                                                <div className="flex gap-1">
+                                                    <Select
+                                                        value={skuMode}
+                                                        onValueChange={(value: 'auto' | 'manual') => {
+                                                            setSkuMode(value);
+                                                            if (value === 'auto') {
+                                                                generateSKU();
+                                                            } else {
+                                                                setFormData({ ...formData, sku: "" });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="w-32">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="auto">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Hash className="h-4 w-4" />
+                                                                    Auto
+                                                                </div>
+                                                            </SelectItem>
+                                                            <SelectItem value="manual">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Hash className="h-4 w-4" />
+                                                                    Manual
+                                                                </div>
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <Input
+                                                        id="sku"
+                                                        value={formData.sku}
+                                                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                                                        placeholder={skuMode === 'auto' ? "Auto generated" : "Enter SKU code"}
+                                                        disabled={skuMode === 'auto'}
+                                                        className="flex-1"
+                                                    />
+                                                    {skuMode === 'auto' && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={generateSKU}
+                                                            title="Generate new SKU"
+                                                        >
+                                                            <RefreshCw className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="min_stock">Minimum Stock</Label>
+                                                <Input
+                                                    id="min_stock"
+                                                    type="number"
+                                                    min="0"
+                                                    value={formData.min_stock}
+                                                    onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
+                                                    placeholder="0"
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="discount">Discount (%)</Label>
+                                                <Input
+                                                    id="discount"
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={formData.discount}
+                                                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                                                    placeholder="0"
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="tax">Tax Amount</Label>
+                                                <Input
+                                                    id="tax"
+                                                    type="number"
+                                                    min="0"
+                                                    value={formData.tax}
+                                                    onChange={(e) => setFormData({ ...formData, tax: e.target.value })}
+                                                    placeholder="0"
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="supplier">Supplier</Label>
+                                                <Select
+                                                    value={formData.supplier_id}
+                                                    onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={suppliers.length === 0 ? "No suppliers" : "Select supplier"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="no_supplier">No supplier</SelectItem>
+                                                        {suppliers.map((supplier) => (
+                                                            <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                                                                {supplier.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="location_id">Cabang/Lokasi</Label>
+                                                <Select
+                                                    value={formData.location_id}
+                                                    onValueChange={(value) => {
+                                                        if (value === "no_location") {
+                                                            toast.info("Harap tambahkan lokasi terlebih dahulu");
+                                                            setFormData({ ...formData, location_id: "" });
+                                                            return;
+                                                        }
+                                                        setFormData({ ...formData, location_id: value });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder={locations.length === 0 ? "Belum ada lokasi" : "Pilih cabang/lokasi"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {locations.length === 0 ? (
+                                                            <SelectItem value="no_location">
+                                                                Tidak ada lokasi - klik untuk info
+                                                            </SelectItem>
+                                                        ) : (
+                                                            locations.map((location) => (
+                                                                <SelectItem key={location.id} value={location.id.toString()}>
+                                                                    {location.name} {location.code && `(${location.code})`}
+                                                                </SelectItem>
+                                                            ))
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {locations.length === 0 && (
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Tidak ada data lokasi. <Link href="/dashboard/admins/locations" className="underline underline-offset-4">Tambah lokasi</Link>
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="grid gap-3">
+                                                <Label htmlFor="expiration_date">Expiration Date</Label>
+                                                <Input
+                                                    id="expiration_date"
+                                                    type="date"
+                                                    value={formData.expiration_date}
+                                                    onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-3 mt-4">
+                                            <Label htmlFor="description">Description</Label>
+                                            <textarea
+                                                id="description"
+                                                value={formData.description}
+                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                placeholder="Enter product description"
+                                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                rows={3}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 

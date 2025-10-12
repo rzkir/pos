@@ -256,11 +256,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
                 const target = role === 'karyawan'
                     ? '/dashboard/karyawan'
-                    : role === 'admins'
-                        ? '/dashboard/admins'
-                        : role === 'super-admins'
-                            ? '/dashboard/super-admins'
-                            : '/dashboard';
+                    : role === 'manager'
+                        ? '/dashboard/manager'
+                        : role === 'admins'
+                            ? '/dashboard/admins'
+                            : role === 'super-admins'
+                                ? '/dashboard/super-admins'
+                                : '/dashboard';
                 // Persist role for middleware-based routing
                 try {
                     if (typeof document !== 'undefined' && role) {

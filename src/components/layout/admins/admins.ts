@@ -27,6 +27,7 @@ export const adminsNav = [
       { title: "Daftar Produk", url: "/dashboard/admins/products/products" },
       { title: "Kategori", url: "/dashboard/admins/products/categories" },
       { title: "Size", url: "/dashboard/admins/products/size" },
+      { title: "Supplier", url: "/dashboard/admins/products/suppliers" },
     ],
   },
 
@@ -35,8 +36,10 @@ export const adminsNav = [
     url: "/dashboard/admins/settings",
     icon: Settings2,
     items: [
-      { title: "Umum", url: "/dashboard/admins/settings" },
-      { title: "Tim", url: "/dashboard/admins/settings/team" },
+      { title: "Profile", url: "/dashboard/admins/settings/profile" },
+      { title: "Company", url: "/dashboard/admins/settings/company" },
+      { title: "Branches", url: "/dashboard/admins/settings/branches" },
+      { title: "Karyawan", url: "/dashboard/admins/settings/karyawan" },
     ],
   },
 ];
