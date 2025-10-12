@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -14,36 +14,34 @@ import { Badge } from "@/components/ui/badge";
 
 import { toast } from "sonner";
 
-import { Plus, Edit, Trash2, MapPin, Phone, Mail, User } from "lucide-react";
+import { Plus, Edit, Trash2, MapPin, Phone, Mail, User, Search, Grid3X3, Table, Filter, X } from "lucide-react";
 
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import ModalForm from "./modal/ModalForm";
 
-interface Location {
-    id: number;
-    name: string;
-    code?: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    manager_name?: string;
-    is_active: boolean;
-    created_at?: string;
-    updated_at?: string;
-}
+import DeleteModal from "./modal/DeleteModal";
 
 export default function LocationsPage() {
-    const [locations, setLocations] = useState<Location[]>([]);
+    const [branch, setBranch] = useState<Branch[]>([]);
+    const [filteredBranch, setFilteredBranch] = useState<Branch[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+    const [editingLocation, setEditingLocation] = useState<Branch | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [branchToDelete, setBranchToDelete] = useState<Branch | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [columnFilters, setColumnFilters] = useState({
+        name: '',
+        code: '',
+        address: '',
+        phone: '',
+        email: '',
+        manager_name: ''
+    });
+    const [showFilters, setShowFilters] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Branch; direction: 'asc' | 'desc' } | null>(null);
     const [formData, setFormData] = useState({
         name: "",
         code: "",
@@ -56,26 +54,99 @@ export default function LocationsPage() {
     const fetchLocations = async () => {
         try {
             setLoading(true);
-            const response = await fetch("/api/locations");
+            const response = await fetch("/api/branch");
             const data = await response.json();
 
             if (response.ok) {
-                setLocations(data.locations || []);
+                setBranch(data.branch || []);
+                setFilteredBranch(data.branch || []);
             } else {
-                toast.error(data.error || "Failed to fetch locations");
+                toast.error(data.error || "Failed to fetch branch");
             }
-        } catch (error) {
-            toast.error("Failed to fetch locations");
+        } catch {
+            toast.error("Failed to fetch branch");
         } finally {
             setLoading(false);
         }
     };
 
+    // Filter and sort logic
+    const applyFilters = useCallback(() => {
+        let filtered = [...branch];
+
+        // Apply search term
+        if (searchTerm) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.code && item.code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (item.address && item.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (item.phone && item.phone.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (item.manager_name && item.manager_name.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
+        // Apply column filters
+        Object.entries(columnFilters).forEach(([key, value]) => {
+            if (value) {
+                filtered = filtered.filter(item => {
+                    const itemValue = item[key as keyof Branch];
+                    return itemValue && itemValue.toString().toLowerCase().includes(value.toLowerCase());
+                });
+            }
+        });
+
+        // Apply sorting
+        if (sortConfig) {
+            filtered.sort((a, b) => {
+                const aValue = a[sortConfig.key] || '';
+                const bValue = b[sortConfig.key] || '';
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+
+        setFilteredBranch(filtered);
+    }, [searchTerm, columnFilters, sortConfig, branch]);
+
+    const handleSort = (key: keyof Branch) => {
+        setSortConfig(prev => {
+            if (prev?.key === key) {
+                return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
+
+    const clearFilters = () => {
+        setSearchTerm('');
+        setColumnFilters({
+            name: '',
+            code: '',
+            address: '',
+            phone: '',
+            email: '',
+            manager_name: ''
+        });
+        setSortConfig(null);
+    };
+
+    const updateColumnFilter = (key: keyof typeof columnFilters, value: string) => {
+        setColumnFilters(prev => ({ ...prev, [key]: value }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
 
         try {
-            const url = editingLocation ? "/api/locations" : "/api/locations";
+            const url = editingLocation ? "/api/branch" : "/api/branch";
             const method = editingLocation ? "PUT" : "POST";
 
             const body = editingLocation
@@ -91,19 +162,21 @@ export default function LocationsPage() {
             const data = await response.json();
 
             if (response.ok) {
-                toast.success(editingLocation ? "Location updated successfully" : "Location created successfully");
+                toast.success(editingLocation ? "Branch updated successfully" : "Branch created successfully");
                 setIsDialogOpen(false);
                 resetForm();
                 fetchLocations();
             } else {
-                toast.error(data.error || "Failed to save location");
+                toast.error(data.error || "Failed to save branch");
             }
-        } catch (error) {
-            toast.error("Failed to save location");
+        } catch {
+            toast.error("Failed to save branch");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const handleEdit = (location: Location) => {
+    const handleEdit = (location: Branch) => {
         setEditingLocation(location);
         setFormData({
             name: location.name,
@@ -116,25 +189,33 @@ export default function LocationsPage() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this location?")) {
-            return;
-        }
+    const handleDeleteClick = (branch: Branch) => {
+        setBranchToDelete(branch);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!branchToDelete) return;
+        setIsDeleting(true);
 
         try {
-            const response = await fetch(`/api/locations?id=${id}`, {
+            const response = await fetch(`/api/branch?id=${branchToDelete.id}`, {
                 method: "DELETE",
             });
 
             if (response.ok) {
-                toast.success("Location deleted successfully");
+                toast.success("Branch deleted successfully");
                 fetchLocations();
             } else {
                 const data = await response.json();
-                toast.error(data.error || "Failed to delete location");
+                toast.error(data.error || "Failed to delete branch");
             }
-        } catch (error) {
-            toast.error("Failed to delete location");
+        } catch {
+            toast.error("Failed to delete branch");
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteDialogOpen(false);
+            setBranchToDelete(null);
         }
     };
 
@@ -159,6 +240,10 @@ export default function LocationsPage() {
         fetchLocations();
     }, []);
 
+    useEffect(() => {
+        applyFilters();
+    }, [applyFilters]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -168,179 +253,409 @@ export default function LocationsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Cabang/Lokasi</h1>
-                    <p className="text-muted-foreground">Kelola cabang dan lokasi toko</p>
+        <section>
+            <div className="container space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold">Cabang</h1>
+                        <p className="text-muted-foreground">Kelola cabang dan lokasi toko</p>
+                    </div>
+                    <Button onClick={openCreateDialog}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Cabang
+                    </Button>
                 </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button onClick={openCreateDialog}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Tambah Lokasi
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {editingLocation ? "Edit Lokasi" : "Tambah Lokasi Baru"}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {editingLocation
-                                    ? "Ubah informasi lokasi cabang"
-                                    : "Tambahkan lokasi cabang baru ke sistem"
-                                }
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="name">Nama Cabang *</Label>
-                                    <Input
-                                        id="name"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Contoh: Cabang Pusat"
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="code">Kode Cabang</Label>
-                                    <Input
-                                        id="code"
-                                        value={formData.code}
-                                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                        placeholder="Contoh: CAB001"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="address">Alamat</Label>
-                                    <Input
-                                        id="address"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                        placeholder="Alamat lengkap cabang"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="phone">Telepon</Label>
-                                    <Input
-                                        id="phone"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        placeholder="Nomor telepon cabang"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="Email cabang"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="manager_name">Nama Manager</Label>
-                                    <Input
-                                        id="manager_name"
-                                        value={formData.manager_name}
-                                        onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
-                                        placeholder="Nama manager cabang"
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit">
-                                    {editingLocation ? "Update" : "Create"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {locations.map((location) => (
-                    <Card key={location.id} className="relative">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <CardTitle className="text-lg">{location.name}</CardTitle>
-                                    {location.code && (
-                                        <Badge variant="secondary" className="mt-1">
-                                            {location.code}
-                                        </Badge>
-                                    )}
-                                </div>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleEdit(location)}
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDelete(location.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                            <Input
+                                placeholder="Cari cabang..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-2"
+                            >
+                                <Filter className="h-4 w-4" />
+                                Filter
+                            </Button>
+                            <div className="flex border rounded-md">
+                                <Button
+                                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('grid')}
+                                    className="rounded-r-none"
+                                >
+                                    <Grid3X3 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('table')}
+                                    className="rounded-l-none"
+                                >
+                                    <Table className="h-4 w-4" />
+                                </Button>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            {location.address && (
-                                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                    <span>{location.address}</span>
+                        </div>
+                    </div>
+
+                    {/* Column Filters */}
+                    {showFilters && (
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-lg">Filter Kolom</CardTitle>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" onClick={clearFilters}>
+                                            <X className="h-4 w-4 mr-1" />
+                                            Clear All
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            )}
-                            {location.phone && (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Phone className="h-4 w-4" />
-                                    <span>{location.phone}</span>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                        <Label htmlFor="filter-name">Nama Cabang</Label>
+                                        <Input
+                                            id="filter-name"
+                                            value={columnFilters.name}
+                                            onChange={(e) => updateColumnFilter('name', e.target.value)}
+                                            placeholder="Filter nama..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="filter-code">Kode Cabang</Label>
+                                        <Input
+                                            id="filter-code"
+                                            value={columnFilters.code}
+                                            onChange={(e) => updateColumnFilter('code', e.target.value)}
+                                            placeholder="Filter kode..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="filter-address">Alamat</Label>
+                                        <Input
+                                            id="filter-address"
+                                            value={columnFilters.address}
+                                            onChange={(e) => updateColumnFilter('address', e.target.value)}
+                                            placeholder="Filter alamat..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="filter-phone">Telepon</Label>
+                                        <Input
+                                            id="filter-phone"
+                                            value={columnFilters.phone}
+                                            onChange={(e) => updateColumnFilter('phone', e.target.value)}
+                                            placeholder="Filter telepon..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="filter-email">Email</Label>
+                                        <Input
+                                            id="filter-email"
+                                            value={columnFilters.email}
+                                            onChange={(e) => updateColumnFilter('email', e.target.value)}
+                                            placeholder="Filter email..."
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="filter-manager">Manager</Label>
+                                        <Input
+                                            id="filter-manager"
+                                            value={columnFilters.manager_name}
+                                            onChange={(e) => updateColumnFilter('manager_name', e.target.value)}
+                                            placeholder="Filter manager..."
+                                        />
+                                    </div>
                                 </div>
-                            )}
-                            {location.email && (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Mail className="h-4 w-4" />
-                                    <span>{location.email}</span>
-                                </div>
-                            )}
-                            {location.manager_name && (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <User className="h-4 w-4" />
-                                    <span>{location.manager_name}</span>
-                                </div>
-                            )}
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
+                {/* Results Count */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                        Menampilkan {filteredBranch.length} dari {branch.length} cabang
+                    </span>
+                    {searchTerm || Object.values(columnFilters).some(v => v) && (
+                        <Button variant="ghost" size="sm" onClick={clearFilters}>
+                            <X className="h-4 w-4 mr-1" />
+                            Clear Filters
+                        </Button>
+                    )}
+                </div>
+
+                {/* Content based on view mode */}
+                {viewMode === 'grid' ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredBranch.map((branch) => (
+                            <Card key={branch.id} className="relative">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg">{branch.name}</CardTitle>
+                                            {branch.code && (
+                                                <Badge variant="secondary" className="mt-1">
+                                                    {branch.code}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleEdit(branch)}
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleDeleteClick(branch)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    {branch.address && (
+                                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                            <span>{branch.address}</span>
+                                        </div>
+                                    )}
+                                    {branch.phone && (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Phone className="h-4 w-4" />
+                                            <span>{branch.phone}</span>
+                                        </div>
+                                    )}
+                                    {branch.email && (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Mail className="h-4 w-4" />
+                                            <span>{branch.email}</span>
+                                        </div>
+                                    )}
+                                    {branch.manager_name && (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <User className="h-4 w-4" />
+                                            <span>{branch.manager_name}</span>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    /* Table View */
+                    <Card>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="border-b">
+                                        <tr>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('name')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Nama Cabang
+                                                    {sortConfig?.key === 'name' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('code')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Kode
+                                                    {sortConfig?.key === 'code' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('address')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Alamat
+                                                    {sortConfig?.key === 'address' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('phone')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Telepon
+                                                    {sortConfig?.key === 'phone' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('email')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Email
+                                                    {sortConfig?.key === 'email' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                onClick={() => handleSort('manager_name')}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    Manager
+                                                    {sortConfig?.key === 'manager_name' && (
+                                                        <span className="text-xs">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th className="text-left p-4 font-medium">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredBranch.map((branch) => (
+                                            <tr key={branch.id} className="border-b hover:bg-background/50">
+                                                <td className="p-4">
+                                                    <div>
+                                                        <div className="font-medium">{branch.name}</div>
+                                                        {branch.code && (
+                                                            <Badge variant="secondary" className="mt-1 text-xs">
+                                                                {branch.code}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-sm text-muted-foreground">
+                                                    {branch.code || '-'}
+                                                </td>
+                                                <td className="p-4 text-sm text-muted-foreground">
+                                                    {branch.address || '-'}
+                                                </td>
+                                                <td className="p-4 text-sm text-muted-foreground">
+                                                    {branch.phone || '-'}
+                                                </td>
+                                                <td className="p-4 text-sm text-muted-foreground">
+                                                    {branch.email || '-'}
+                                                </td>
+                                                <td className="p-4 text-sm text-muted-foreground">
+                                                    {branch.manager_name || '-'}
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleEdit(branch)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteClick(branch)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </CardContent>
                     </Card>
-                ))}
+                )}
+
+                {filteredBranch.length === 0 && branch.length > 0 && (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">Tidak ada hasil</h3>
+                            <p className="text-muted-foreground text-center mb-4">
+                                Tidak ada cabang yang sesuai dengan filter yang dipilih
+                            </p>
+                            <Button variant="outline" onClick={clearFilters}>
+                                <X className="h-4 w-4 mr-2" />
+                                Clear Filters
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {branch.length === 0 && (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">Belum ada cabang</h3>
+                            <p className="text-muted-foreground text-center mb-4">
+                                Mulai dengan menambahkan cabang atau cabang pertama Anda
+                            </p>
+                            <Button onClick={openCreateDialog}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tambah Cabang Pertama
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
-            {locations.length === 0 && (
-                <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Belum ada lokasi</h3>
-                        <p className="text-muted-foreground text-center mb-4">
-                            Mulai dengan menambahkan cabang atau lokasi pertama Anda
-                        </p>
-                        <Button onClick={openCreateDialog}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Tambah Lokasi Pertama
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
+            <ModalForm
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                editingLocation={editingLocation}
+                formData={formData}
+                setFormData={setFormData}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+            />
+
+            <DeleteModal
+                isOpen={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                branchToDelete={branchToDelete}
+                onConfirm={handleDeleteConfirm}
+                isDeleting={isDeleting}
+            />
+        </section>
     );
 }

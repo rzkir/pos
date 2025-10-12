@@ -51,7 +51,7 @@ interface Supplier {
   updated_at?: string;
 }
 
-interface Location {
+interface Branch {
   id: number;
   name: string;
   code?: string;

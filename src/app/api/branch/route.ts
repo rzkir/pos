@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { createAdminServerClient } from "@/lib/supabase";
 
 export async function GET() {
   try {
     const supabase = createAdminServerClient();
 
-    const { data: locations, error } = await supabase
-      .from("locations")
+    const { data: branch, error } = await supabase
+      .from("branch")
       .select("*")
       .order("name", { ascending: true });
 
     if (error) {
-      console.error("Error fetching locations:", error);
+      console.error("Error fetching branch:", error);
       return NextResponse.json(
-        { error: "Failed to fetch locations" },
+        { error: "Failed to fetch branch" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ locations });
+    return NextResponse.json({ branch });
   } catch (error) {
-    console.error("Error in locations GET:", error);
+    console.error("Error in branch GET:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -39,8 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const { data: location, error } = await supabase
-      .from("locations")
+    const { data: branch, error } = await supabase
+      .from("branch")
       .insert([
         {
           name,
@@ -55,16 +56,16 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Error creating location:", error);
+      console.error("Error creating branch:", error);
       return NextResponse.json(
-        { error: "Failed to create location" },
+        { error: "Failed to create branch" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ location }, { status: 201 });
+    return NextResponse.json({ branch }, { status: 201 });
   } catch (error) {
-    console.error("Error in locations POST:", error);
+    console.error("Error in branch POST:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -87,8 +88,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { data: location, error } = await supabase
-      .from("locations")
+    const { data: branch, error } = await supabase
+      .from("branch")
       .update({
         name,
         code: code || null,
@@ -103,16 +104,16 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Error updating location:", error);
+      console.error("Error updating branch:", error);
       return NextResponse.json(
-        { error: "Failed to update location" },
+        { error: "Failed to update branch" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ location });
+    return NextResponse.json({ branch });
   } catch (error) {
-    console.error("Error in locations PUT:", error);
+    console.error("Error in branch PUT:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -130,19 +131,19 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("locations").delete().eq("id", id);
+    const { error } = await supabase.from("branch").delete().eq("id", id);
 
     if (error) {
-      console.error("Error deleting location:", error);
+      console.error("Error deleting branch:", error);
       return NextResponse.json(
-        { error: "Failed to delete location" },
+        { error: "Failed to delete branch" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ message: "Location deleted successfully" });
+    return NextResponse.json({ message: "Branch deleted successfully" });
   } catch (error) {
-    console.error("Error in locations DELETE:", error);
+    console.error("Error in branch DELETE:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
