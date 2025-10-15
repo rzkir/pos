@@ -377,24 +377,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         setLoading(true);
+        // Optimistically clear client state first so UI updates immediately
+        setUser(null);
+        setSession(null);
+        resetState();
+        clearCachedProfile();
         try {
-            await fetch("/api/logout", { method: "POST" });
-            await supabase.auth.signOut();
-            setUser(null);
-            setSession(null);
-            resetState();
-            clearCachedProfile();
-            showSuccess("Logout berhasil");
-            // Clear auth cookie used by middleware
+            // Best-effort: clear cookies on server and sign out from Supabase without blocking navigation
+            void fetch("/api/logout", { method: "POST", credentials: 'include' }).catch(() => { });
+            void supabase.auth.signOut().catch(() => { });
+            // Clear app cookies on client as well
             try {
                 if (typeof document !== 'undefined') {
                     document.cookie = 'app-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                     document.cookie = 'app-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                 }
             } catch { }
+            showSuccess("Logout berhasil");
         } catch {
             showError("Logout gagal");
         } finally {
+            // Force a hard navigation so middleware re-evaluates immediately
+            try {
+                if (typeof window !== 'undefined') {
+                    window.location.replace('/signin');
+                } else if (router) {
+                    router.replace('/signin');
+                }
+            } catch { }
             setLoading(false);
         }
     };

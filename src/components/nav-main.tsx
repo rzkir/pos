@@ -39,7 +39,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel className="text-muted-foreground">System Management</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           // Check if any sub-item is active
@@ -61,10 +61,11 @@ export function NavMain({
                   <SidebarMenuButton
                     tooltip={item.title}
                     isActive={isMainItemActive}
+                    className="data-[active=true]:bg-secondary/60 data-[active=true]:text-foreground hover:bg-secondary/50"
                   >
-                    {item.icon && <item.icon />}
+                    {item.icon && <item.icon className="size-4" />}
                     <span>{item.title}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -76,6 +77,7 @@ export function NavMain({
                           <SidebarMenuSubButton
                             asChild
                             isActive={isSubItemActive}
+                            className="data-[active=true]:bg-secondary/60 data-[active=true]:text-foreground hover:bg-secondary/50"
                           >
                             <a href={subItem.url}>
                               <span>{subItem.title}</span>

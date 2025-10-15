@@ -38,7 +38,7 @@ export const adminsNav = [
     url: "/dashboard/admins/settings",
     icon: Settings2,
     items: [
-      { title: "Profile", url: "/dashboard/admins/settings" },
+      { title: "Profile", url: "/dashboard/admins/settings/profile" },
       { title: "Company", url: "/dashboard/admins/settings/company" },
       { title: "Branches", url: "/dashboard/admins/settings/branches" },
       { title: "Karyawan", url: "/dashboard/admins/settings/karyawan" },

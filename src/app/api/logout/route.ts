@@ -4,7 +4,6 @@ import { createAnonServerClient } from "@/lib/supabase";
 
 export async function POST() {
   const supabase = createAnonServerClient();
-  // Best-effort: sign out via server client (no-op for browser cookies but harmless)
   try {
     await supabase.auth.signOut();
   } catch {}

@@ -120,3 +120,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Animated border glow for image/card wrapper */
+@keyframes border-marquee {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shadow-pulse {
+  position: relative;
+  overflow: visible;
+}
+
+.animate-shadow-pulse::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: calc(var(--radius) + 3px);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    transparent,
+    var(--primary),
+    var(--primary),
+    var(--primary),
+    transparent,
+    transparent
+  );
+  background-size: 400% 100%;
+  animation: border-marquee 10s linear infinite;
+  z-index: -1;
+}

@@ -6,9 +6,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Input } from '@/components/ui/input'
+
 import { PasswordInput } from '@/components/ui/password-input'
 
 import { Button } from '@/components/ui/button'
+
 import { useAuth } from '@/context/AuthContext'
 
 export default function SignInPage() {

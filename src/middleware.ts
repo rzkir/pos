@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const publicRoutes = new Set<string>([
+  "/", // home: system management overview
   "/signin",
   "/signup",
   "/forgot-password",
@@ -29,10 +30,9 @@ function isStaticAsset(pathname: string): boolean {
 }
 
 function hasSupabaseSession(req: NextRequest): boolean {
-  // Supabase SSR typically sets these cookies when authenticated
+  // Prefer Supabase SSR cookies when present, fallback to app-auth cookie set on client sign-in
   const access = req.cookies.get("sb-access-token")?.value;
   const refresh = req.cookies.get("sb-refresh-token")?.value;
-  // Fallback to custom app-auth cookie set on sign-in
   const appAuth = req.cookies.get("app-auth")?.value;
   return Boolean((access && refresh) || appAuth === "1");
 }
@@ -70,10 +70,62 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If authed and visiting public auth pages, send to generic app home
-  if (isAuthed && (pathname === "/signin" || pathname === "/signup")) {
+  // Helper to resolve role-based home
+  const role = isAuthed ? getAppRole(req) : null;
+  const roleToPath: Record<
+    NonNullable<ReturnType<typeof getAppRole>>,
+    string
+  > = {
+    admins: "/dashboard/admins",
+    karyawan: "/dashboard/karyawan",
+    manager: "/dashboard/manager",
+    "super-admins": "/dashboard/super-admins",
+  } as const;
+
+  const authenticatedHome = role
+    ? roleToPath[role]
+    : DEFAULT_AUTHENTICATED_REDIRECT;
+
+  // If authed and on root, honor next param or send to authenticated home
+  if (isAuthed && pathname === "/") {
     const url = req.nextUrl.clone();
-    url.pathname = DEFAULT_AUTHENTICATED_REDIRECT;
+    const nextParam = url.searchParams.get("next");
+    if (nextParam) {
+      // Safely split path and query
+      const [nextPath, nextQuery = ""] = nextParam.split("?");
+      url.pathname = nextPath || authenticatedHome;
+      url.search = nextQuery ? `?${nextQuery}` : "";
+    } else {
+      url.pathname = authenticatedHome;
+      url.search = "";
+    }
+    return NextResponse.redirect(url);
+  }
+
+  // If authed and visiting signup, send to role home
+  if (isAuthed && pathname === "/signup") {
+    const url = req.nextUrl.clone();
+    url.pathname = authenticatedHome;
+    return NextResponse.redirect(url);
+  }
+
+  // If authed and on /signin with ?next=, honor next; otherwise allow /signin
+  if (isAuthed && pathname === "/signin") {
+    const url = req.nextUrl.clone();
+    const nextParam = url.searchParams.get("next");
+    if (nextParam) {
+      const [nextPath, nextQuery = ""] = nextParam.split("?");
+      url.pathname = nextPath || authenticatedHome;
+      url.search = nextQuery ? `?${nextQuery}` : "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // If authed and visiting generic /dashboard, route to role-specific dashboard
+  if (isAuthed && pathname === "/dashboard") {
+    const url = req.nextUrl.clone();
+    url.pathname = authenticatedHome;
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
@@ -86,13 +138,6 @@ export function middleware(req: NextRequest) {
       const isKaryawanPath = pathname.startsWith("/dashboard/karyawan");
       const isSuperAdminsPath = pathname.startsWith("/dashboard/super-admins");
       const isManagerPath = pathname.startsWith("/dashboard/manager");
-
-      const roleToPath: Record<typeof role, string> = {
-        admins: "/dashboard/admins",
-        karyawan: "/dashboard/karyawan",
-        manager: "/dashboard/manager",
-        "super-admins": "/dashboard/super-admins",
-      } as const;
 
       const expectedPath = roleToPath[role];
 
