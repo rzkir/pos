@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -38,6 +39,7 @@ export default function EditProducts({ id }: EditProductsProps) {
     const [categories, setCategories] = useState<ProductCategories[]>([]);
     const [sizes, setSizes] = useState<ProductSizes[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [branches, setBranches] = useState<Branch[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
     const [barcodeMode, setBarcodeMode] = useState<'auto' | 'manual'>('manual');
@@ -61,8 +63,8 @@ export default function EditProducts({ id }: EditProductsProps) {
         min_stock: "",
         discount: "",
         description: "",
-        supplier_id: "",
-        location_id: "",
+        supplier_id: "none",
+        location_id: "none",
         expiration_date: "",
         tax: "",
     });
@@ -71,18 +73,20 @@ export default function EditProducts({ id }: EditProductsProps) {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [productRes, categoriesRes, sizesRes, suppliersRes] = await Promise.all([
+            const [productRes, categoriesRes, sizesRes, suppliersRes, branchesRes] = await Promise.all([
                 fetch(`/api/products/${id}`),
                 fetch("/api/products/categories"),
                 fetch("/api/products/sizes"),
                 fetch("/api/products/suppliers"),
+                fetch("/api/branch"),
             ]);
 
-            const [productData, categoriesData, sizesData, suppliersData] = await Promise.all([
+            const [productData, categoriesData, sizesData, suppliersData, branchesData] = await Promise.all([
                 productRes.json(),
                 categoriesRes.json(),
                 sizesRes.json(),
                 suppliersRes.json(),
+                branchesRes.json(),
             ]);
 
             if (productRes.ok) {
@@ -103,8 +107,8 @@ export default function EditProducts({ id }: EditProductsProps) {
                     min_stock: product.min_stock?.toString() || "",
                     discount: product.discount?.toString() || "",
                     description: product.description || "",
-                    supplier_id: product.supplier_id?.toString() || "",
-                    location_id: product.location_id?.toString() || "",
+                    supplier_id: product.supplier_id?.toString() || "none",
+                    location_id: product.location_id?.toString() || "none",
                     expiration_date: product.expiration_date || "",
                     tax: product.tax?.toString() || "",
                 });
@@ -127,6 +131,10 @@ export default function EditProducts({ id }: EditProductsProps) {
 
             if (suppliersRes.ok) {
                 setSuppliers(suppliersData.suppliers || []);
+            }
+
+            if (branchesRes.ok) {
+                setBranches(branchesData.branch || []);
             }
         } catch {
             toast.error("Failed to fetch data");
@@ -235,6 +243,14 @@ export default function EditProducts({ id }: EditProductsProps) {
                 finalFormData.barcode = `BC${timestamp.slice(-8)}${random}`;
             }
 
+            // Normalize supplier_id and location_id 'none' to empty before submit
+            if (finalFormData.supplier_id === 'none') {
+                finalFormData.supplier_id = "";
+            }
+            if (finalFormData.location_id === 'none') {
+                finalFormData.location_id = "";
+            }
+
             // Upload image if selected
             if (selectedImage) {
                 const imageUrl = await uploadImage(selectedImage);
@@ -305,30 +321,7 @@ export default function EditProducts({ id }: EditProductsProps) {
     }
 
     return (
-        <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                        orientation="vertical"
-                        className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/admins/products">
-                                    Products
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Edit Product</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </header>
-
+        <section>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -559,7 +552,7 @@ export default function EditProducts({ id }: EditProductsProps) {
                                                     <SelectValue placeholder={suppliers.length === 0 ? "No suppliers" : "Select supplier"} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="">No supplier</SelectItem>
+                                                    <SelectItem value="none">No supplier</SelectItem>
                                                     {suppliers.map((supplier) => (
                                                         <SelectItem key={supplier.id} value={supplier.id.toString()}>
                                                             {supplier.name}
@@ -570,15 +563,23 @@ export default function EditProducts({ id }: EditProductsProps) {
                                         </div>
 
                                         <div className="grid gap-3">
-                                            <Label htmlFor="location_id">Location ID</Label>
-                                            <Input
-                                                id="location_id"
-                                                type="number"
-                                                min="0"
+                                            <Label htmlFor="location_id">Location</Label>
+                                            <Select
                                                 value={formData.location_id}
-                                                onChange={(e) => setFormData({ ...formData, location_id: e.target.value })}
-                                                placeholder="0"
-                                            />
+                                                onValueChange={(value) => setFormData({ ...formData, location_id: value })}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder={branches.length === 0 ? "No branches" : "Select location"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">No location</SelectItem>
+                                                    {branches.map((b) => (
+                                                        <SelectItem key={b.id} value={b.id.toString()}>
+                                                            {b.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
 
                                         <div className="grid gap-3">
@@ -736,6 +737,6 @@ export default function EditProducts({ id }: EditProductsProps) {
                     </CardContent>
                 </Card>
             </div>
-        </SidebarInset>
+        </section>
     );
 }

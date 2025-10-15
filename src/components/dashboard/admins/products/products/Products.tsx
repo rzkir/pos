@@ -27,13 +27,14 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
 
 import { toast } from "sonner";
 
 import { useRouter } from "next/navigation";
 
 import Image from "next/image"
+import ViewModal from "./modal/ViewModal";
 
 import { formatIdr } from "@/base/helper/formatIdr";
 
@@ -41,6 +42,8 @@ export default function Products() {
     const router = useRouter();
     const [products, setProducts] = useState<ProductWithRelations[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isViewOpen, setIsViewOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<ProductWithRelations | null>(null);
 
     const fetchData = async () => {
         try {
@@ -93,6 +96,11 @@ export default function Products() {
         router.push(`/dashboard/admins/products/edit/${productId}`);
     };
 
+    const openView = (product: ProductWithRelations) => {
+        setSelectedProduct(product);
+        setIsViewOpen(true);
+    };
+
     return (
         <section className="px-2 md:px-3 py-2">
             <div className="space-y-4">
@@ -112,7 +120,7 @@ export default function Products() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>ID</TableHead>
+                                <TableHead>No</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Modal</TableHead>
@@ -139,9 +147,9 @@ export default function Products() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                products.map((product) => (
+                                products.map((product, index) => (
                                     <TableRow key={product.id}>
-                                        <TableCell className="font-medium">{product.id}</TableCell>
+                                        <TableCell className="font-medium">{index + 1}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 {product.image_url && (
@@ -174,6 +182,13 @@ export default function Products() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openView(product)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -214,6 +229,11 @@ export default function Products() {
                         </TableBody>
                     </Table>
                 </div>
+                <ViewModal
+                    open={isViewOpen}
+                    onOpenChange={setIsViewOpen}
+                    product={selectedProduct}
+                />
             </div>
         </section>
     );

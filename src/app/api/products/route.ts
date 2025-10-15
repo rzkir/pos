@@ -6,7 +6,6 @@ import { createAdminServerClient } from "@/lib/supabase";
 
 import crypto from "crypto";
 
-// GET - Fetch all products
 export async function GET() {
   try {
     const supabase: SupabaseClient = createAdminServerClient();
@@ -41,7 +40,6 @@ export async function GET() {
   }
 }
 
-// POST - Create new product
 export async function POST(request: NextRequest) {
   try {
     const supabase: SupabaseClient = createAdminServerClient();
@@ -98,6 +96,10 @@ export async function POST(request: NextRequest) {
 
     const productUid = crypto.randomUUID();
 
+    // Normalize optional relations
+    const normalizedSupplierId =
+      supplier_id && supplier_id !== "none" ? supplier_id : null;
+
     const { data: product, error } = await supabase
       .from("products")
       .insert([
@@ -120,7 +122,7 @@ export async function POST(request: NextRequest) {
           min_stock: min_stock ? parseInt(min_stock) : 0,
           discount: discount ? parseFloat(discount) : 0,
           description: description || null,
-          supplier_id: supplier_id || null,
+          supplier_id: normalizedSupplierId,
           location_id: location_id || null,
           expiration_date: expiration_date || null,
           tax: tax ? parseFloat(tax) : 0,

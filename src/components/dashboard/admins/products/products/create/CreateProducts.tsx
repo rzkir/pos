@@ -66,7 +66,6 @@ export default function CreateProducts() {
         size_id: "",
         barcode: "",
         is_active: true,
-        // Tambahan penting
         sku: "",
         min_stock: "",
         discount: "",
@@ -255,26 +254,22 @@ export default function CreateProducts() {
     }, []);
 
     useEffect(() => {
-        // Generate initial barcode if auto mode
         if (barcodeMode === 'auto') {
             generateBarcode();
         }
     }, [barcodeMode, generateBarcode]);
 
     useEffect(() => {
-        // Generate initial SKU if auto mode
         if (skuMode === 'auto') {
             generateSKU();
         }
     }, [skuMode, generateSKU]);
 
-    // Create product
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
 
         try {
-            // Generate barcode automatically if empty
             const finalFormData = { ...formData };
             if (!finalFormData.barcode || finalFormData.barcode.trim() === '') {
                 const timestamp = Date.now().toString();
@@ -282,7 +277,6 @@ export default function CreateProducts() {
                 finalFormData.barcode = `BC${timestamp.slice(-8)}${random}`;
             }
 
-            // Generate SKU automatically if empty
             if (!finalFormData.sku || finalFormData.sku.trim() === '') {
                 const timestamp = Date.now().toString();
                 const lastSix = timestamp.slice(-6);
@@ -290,7 +284,6 @@ export default function CreateProducts() {
                 finalFormData.sku = `SKU${lastSix}${randomTwo}`;
             }
 
-            // Parse required numeric fields
             const parsedPrice = parseFloat((finalFormData.price as unknown as string) || '');
             const parsedModal = parseFloat((finalFormData.modal as unknown as string) || '');
             const parsedStock = parseInt((finalFormData.stock as unknown as string) || '', 10);
@@ -300,7 +293,6 @@ export default function CreateProducts() {
                 return;
             }
 
-            // Upload image if selected
             if (selectedImage) {
                 const imageUrl = await uploadImage(selectedImage);
                 if (imageUrl) {

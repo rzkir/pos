@@ -91,6 +91,10 @@ export async function PUT(
       );
     }
 
+    // Normalize optional relations
+    const normalizedSupplierId =
+      supplier_id && supplier_id !== "none" ? supplier_id : null;
+
     const { data: product, error } = await supabase
       .from("products")
       .update({
@@ -108,7 +112,7 @@ export async function PUT(
         min_stock: min_stock ? parseInt(min_stock) : 0,
         discount: discount ? parseFloat(discount) : 0,
         description: description || null,
-        supplier_id: supplier_id || null,
+        supplier_id: normalizedSupplierId,
         location_id: location_id || null,
         expiration_date: expiration_date || null,
         tax: tax ? parseFloat(tax) : 0,
