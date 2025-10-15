@@ -8,7 +8,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 
 import { Separator } from "@/components/ui/separator";
 
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb";
 
 import { useEffect } from "react";
 
@@ -41,19 +41,7 @@ export default function DashboardLayout({
                             orientation="vertical"
                             className="mr-2 data-[orientation=vertical]:h-4"
                         />
-                        <Breadcrumb>
-                            <BreadcrumbList>
-                                <BreadcrumbItem className="hidden md:block">
-                                    <BreadcrumbLink href="/dashboard/admins/settings">
-                                        Settings
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                                <BreadcrumbSeparator className="hidden md:block" />
-                                <BreadcrumbItem>
-                                    <BreadcrumbPage>Branch</BreadcrumbPage>
-                                </BreadcrumbItem>
-                            </BreadcrumbList>
-                        </Breadcrumb>
+                        <DynamicBreadcrumb />
                     </div>
                     <div className="ml-auto flex items-center gap-2 px-4">
                         <ThemeToggle />

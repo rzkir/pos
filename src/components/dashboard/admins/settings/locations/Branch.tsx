@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 
 import { Label } from "@/components/ui/label";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -253,14 +253,14 @@ export default function LocationsPage() {
     }
 
     return (
-        <section>
-            <div className="container space-y-4">
-                <div className="flex items-center justify-between">
+        <section className="px-2 md:px-3 py-2">
+            <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card rounded-md border gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Cabang</h1>
-                        <p className="text-muted-foreground">Kelola cabang dan lokasi toko</p>
+                        <h1 className="text-xl sm:text-2xl font-bold mb-2">Cabang</h1>
+                        <p className="text-sm text-muted-foreground">Kelola cabang dan lokasi toko</p>
                     </div>
-                    <Button onClick={openCreateDialog}>
+                    <Button onClick={openCreateDialog} className="w-full sm:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
                         Tambah Cabang
                     </Button>
@@ -278,21 +278,21 @@ export default function LocationsPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <Button
                                 variant="outline"
                                 onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center gap-2"
+                                className="flex items-center justify-center gap-2 w-full sm:w-auto"
                             >
                                 <Filter className="h-4 w-4" />
-                                Filter
+                                <span className="hidden sm:inline">Filter</span>
                             </Button>
-                            <div className="flex border rounded-md">
+                            <div className="flex border rounded-md w-full sm:w-auto">
                                 <Button
                                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setViewMode('grid')}
-                                    className="rounded-r-none"
+                                    className="rounded-r-none flex-1 sm:flex-none"
                                 >
                                     <Grid3X3 className="h-4 w-4" />
                                 </Button>
@@ -300,7 +300,7 @@ export default function LocationsPage() {
                                     variant={viewMode === 'table' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setViewMode('table')}
-                                    className="rounded-l-none"
+                                    className="rounded-l-none flex-1 sm:flex-none"
                                 >
                                     <Table className="h-4 w-4" />
                                 </Button>
@@ -326,7 +326,7 @@ export default function LocationsPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <div>
                                         <Label htmlFor="filter-name">Nama Cabang</Label>
                                         <Input
@@ -402,63 +402,64 @@ export default function LocationsPage() {
 
                 {/* Content based on view mode */}
                 {viewMode === 'grid' ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                         {filteredBranch.map((branch) => (
                             <Card key={branch.id} className="relative">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <CardTitle className="text-lg">{branch.name}</CardTitle>
-                                            {branch.code && (
-                                                <Badge variant="secondary" className="mt-1">
-                                                    {branch.code}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleEdit(branch)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDeleteClick(branch)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                <CardHeader>
+                                    <div className="flex flex-wrap justify-between">
+                                        <CardTitle className="text-base sm:text-lg truncate">{branch.name}</CardTitle>
+                                        {branch.code && (
+                                            <Badge variant="secondary" className="mt-1 text-xs">
+                                                {branch.code}
+                                            </Badge>
+                                        )}
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-2">
+                                <CardContent className="space-y-4">
                                     {branch.address && (
                                         <div className="flex items-start gap-2 text-sm text-muted-foreground">
                                             <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                            <span>{branch.address}</span>
+                                            <span className="break-words">{branch.address}</span>
                                         </div>
                                     )}
                                     {branch.phone && (
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Phone className="h-4 w-4" />
-                                            <span>{branch.phone}</span>
+                                            <Phone className="h-4 w-4 flex-shrink-0" />
+                                            <span className="break-all">{branch.phone}</span>
                                         </div>
                                     )}
                                     {branch.email && (
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Mail className="h-4 w-4" />
-                                            <span>{branch.email}</span>
+                                            <Mail className="h-4 w-4 flex-shrink-0" />
+                                            <span className="break-all">{branch.email}</span>
                                         </div>
                                     )}
                                     {branch.manager_name && (
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <User className="h-4 w-4" />
-                                            <span>{branch.manager_name}</span>
+                                            <User className="h-4 w-4 flex-shrink-0" />
+                                            <span className="truncate">{branch.manager_name}</span>
                                         </div>
                                     )}
                                 </CardContent>
+                                <CardFooter className="flex justify-end">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEdit(branch)}
+                                        className="h-8 w-8"
+                                    >
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteClick(branch)}
+                                        className="h-8 w-8"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </CardFooter>
                             </Card>
                         ))}
                     </div>
@@ -467,15 +468,16 @@ export default function LocationsPage() {
                     <Card>
                         <CardContent className="p-0">
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full min-w-[800px]">
                                     <thead className="border-b">
                                         <tr>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[120px]"
                                                 onClick={() => handleSort('name')}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    Nama Cabang
+                                                    <span className="hidden sm:inline">Nama Cabang</span>
+                                                    <span className="sm:hidden">Nama</span>
                                                     {sortConfig?.key === 'name' && (
                                                         <span className="text-xs">
                                                             {sortConfig.direction === 'asc' ? '↑' : '↓'}
@@ -484,7 +486,7 @@ export default function LocationsPage() {
                                                 </div>
                                             </th>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[80px]"
                                                 onClick={() => handleSort('code')}
                                             >
                                                 <div className="flex items-center gap-2">
@@ -497,7 +499,7 @@ export default function LocationsPage() {
                                                 </div>
                                             </th>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[150px] hidden sm:table-cell"
                                                 onClick={() => handleSort('address')}
                                             >
                                                 <div className="flex items-center gap-2">
@@ -510,11 +512,12 @@ export default function LocationsPage() {
                                                 </div>
                                             </th>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[100px]"
                                                 onClick={() => handleSort('phone')}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    Telepon
+                                                    <span className="hidden sm:inline">Telepon</span>
+                                                    <span className="sm:hidden">Telp</span>
                                                     {sortConfig?.key === 'phone' && (
                                                         <span className="text-xs">
                                                             {sortConfig.direction === 'asc' ? '↑' : '↓'}
@@ -523,7 +526,7 @@ export default function LocationsPage() {
                                                 </div>
                                             </th>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[120px] hidden md:table-cell"
                                                 onClick={() => handleSort('email')}
                                             >
                                                 <div className="flex items-center gap-2">
@@ -536,7 +539,7 @@ export default function LocationsPage() {
                                                 </div>
                                             </th>
                                             <th
-                                                className="text-left p-4 font-medium cursor-pointer hover:bg-background/50"
+                                                className="text-left p-2 sm:p-4 font-medium cursor-pointer hover:bg-background/50 min-w-[100px] hidden lg:table-cell"
                                                 onClick={() => handleSort('manager_name')}
                                             >
                                                 <div className="flex items-center gap-2">
@@ -548,15 +551,15 @@ export default function LocationsPage() {
                                                     )}
                                                 </div>
                                             </th>
-                                            <th className="text-left p-4 font-medium">Aksi</th>
+                                            <th className="text-left p-2 sm:p-4 font-medium min-w-[80px]">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {filteredBranch.map((branch) => (
                                             <tr key={branch.id} className="border-b hover:bg-background/50">
-                                                <td className="p-4">
+                                                <td className="p-2 sm:p-4">
                                                     <div>
-                                                        <div className="font-medium">{branch.name}</div>
+                                                        <div className="font-medium text-sm sm:text-base truncate">{branch.name}</div>
                                                         {branch.code && (
                                                             <Badge variant="secondary" className="mt-1 text-xs">
                                                                 {branch.code}
@@ -564,27 +567,36 @@ export default function LocationsPage() {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="p-4 text-sm text-muted-foreground">
+                                                <td className="p-2 sm:p-4 text-sm text-muted-foreground">
                                                     {branch.code || '-'}
                                                 </td>
-                                                <td className="p-4 text-sm text-muted-foreground">
-                                                    {branch.address || '-'}
+                                                <td className="p-2 sm:p-4 text-sm text-muted-foreground hidden sm:table-cell">
+                                                    <div className="truncate max-w-[150px]" title={branch.address || ''}>
+                                                        {branch.address || '-'}
+                                                    </div>
                                                 </td>
-                                                <td className="p-4 text-sm text-muted-foreground">
-                                                    {branch.phone || '-'}
+                                                <td className="p-2 sm:p-4 text-sm text-muted-foreground">
+                                                    <div className="truncate max-w-[100px]" title={branch.phone || ''}>
+                                                        {branch.phone || '-'}
+                                                    </div>
                                                 </td>
-                                                <td className="p-4 text-sm text-muted-foreground">
-                                                    {branch.email || '-'}
+                                                <td className="p-2 sm:p-4 text-sm text-muted-foreground hidden md:table-cell">
+                                                    <div className="truncate max-w-[120px]" title={branch.email || ''}>
+                                                        {branch.email || '-'}
+                                                    </div>
                                                 </td>
-                                                <td className="p-4 text-sm text-muted-foreground">
-                                                    {branch.manager_name || '-'}
+                                                <td className="p-2 sm:p-4 text-sm text-muted-foreground hidden lg:table-cell">
+                                                    <div className="truncate max-w-[100px]" title={branch.manager_name || ''}>
+                                                        {branch.manager_name || '-'}
+                                                    </div>
                                                 </td>
-                                                <td className="p-4">
+                                                <td className="p-2 sm:p-4">
                                                     <div className="flex gap-1">
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleEdit(branch)}
+                                                            className="h-8 w-8 p-0"
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
@@ -592,6 +604,7 @@ export default function LocationsPage() {
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => handleDeleteClick(branch)}
+                                                            className="h-8 w-8 p-0"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>

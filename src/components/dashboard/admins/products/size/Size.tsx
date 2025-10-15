@@ -4,19 +4,6 @@ import React, { useState, useEffect } from "react";
 
 import { formatDateTimeIndonesian } from "@/base/helper/formatDate";
 
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-
-import { Separator } from "@/components/ui/separator";
-
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -170,30 +157,7 @@ export default function Sizes() {
     };
 
     return (
-        <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                        orientation="vertical"
-                        className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/admins/products">
-                                    Products
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Product Sizes</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </header>
-
+        <section className="container">
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -348,6 +312,6 @@ export default function Sizes() {
                     </DialogContent>
                 </Dialog>
             </div>
-        </SidebarInset>
+        </section>
     );
 }

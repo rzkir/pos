@@ -5,7 +5,6 @@ export const superAdminsNav = [
     title: "Dashboard",
     url: "/dashboard/super-admins",
     icon: SquareTerminal,
-    isActive: true,
     items: [{ title: "Ringkasan", url: "/dashboard/super-admins" }],
   },
   {

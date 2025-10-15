@@ -1,21 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+
 import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 import {
     Dialog,
     DialogContent,
@@ -25,6 +21,7 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -36,18 +33,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Search, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 
-interface Supplier {
-    id: number;
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    created_at?: string;
-    updated_at?: string;
-}
+import { Plus, Edit, Trash2, Search, RefreshCw } from "lucide-react";
+
+import { toast } from "sonner";
 
 export default function Suppliers() {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -203,31 +192,8 @@ export default function Suppliers() {
     );
 
     return (
-        <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                        orientation="vertical"
-                        className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/admins/products">
-                                    Products
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Suppliers</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </header>
-
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <section className="container">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">Suppliers</h1>
@@ -497,6 +463,6 @@ export default function Suppliers() {
                     </DialogContent>
                 </Dialog>
             </div>
-        </SidebarInset>
+        </section>
     );
 }

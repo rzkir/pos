@@ -4,24 +4,7 @@ import React, { useState, useEffect } from "react";
 
 import { formatDateTimeIndonesian } from "@/base/helper/formatDate";
 
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-
-import { Separator } from "@/components/ui/separator";
-
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-
 import { Button } from "@/components/ui/button";
-
-import { Input } from "@/components/ui/input";
-
-import { Label } from "@/components/ui/label";
 
 import {
     Table,
@@ -32,37 +15,20 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-
-import { Plus, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Edit } from "lucide-react";
 
 import { toast } from "sonner";
+
+import DeleteModal from "./modal/DeleteModal";
+import FormModal from "./modal/FormModal";
 
 export default function Categories() {
     const [categories, setCategories] = useState<ProductCategories[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [submitLoading, setSubmitLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
     const [editingCategory, setEditingCategory] = useState<ProductCategories | null>(null);
     const [formData, setFormData] = useState({ name: "" });
 
@@ -89,61 +55,60 @@ export default function Categories() {
         fetchCategories();
     }, []);
 
-    // Create category
-    const handleCreate = async (e: React.FormEvent) => {
+    // Handle form submission for both create and edit
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const response = await fetch("/api/products/categories", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success("Category created successfully");
-                setFormData({ name: "" });
-                setIsCreateDialogOpen(false);
-                fetchCategories();
-            } else {
-                toast.error(data.error || "Failed to create category");
-            }
-        } catch {
-            toast.error("Failed to create category");
-        }
-    };
-
-    // Update category
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingCategory) return;
+        setSubmitLoading(true);
 
         try {
-            const response = await fetch(`/api/products/categories/${editingCategory.id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
+            if (dialogMode === 'create') {
+                const response = await fetch("/api/products/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok) {
-                toast.success("Category updated successfully");
-                setFormData({ name: "" });
-                setEditingCategory(null);
-                setIsEditDialogOpen(false);
-                fetchCategories();
+                if (response.ok) {
+                    toast.success("Category created successfully");
+                    setFormData({ name: "" });
+                    setIsDialogOpen(false);
+                    fetchCategories();
+                } else {
+                    toast.error(data.error || "Failed to create category");
+                }
             } else {
-                toast.error(data.error || "Failed to update category");
+                if (!editingCategory) return;
+
+                const response = await fetch(`/api/products/categories/${editingCategory.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    toast.success("Category updated successfully");
+                    setFormData({ name: "" });
+                    setEditingCategory(null);
+                    setIsDialogOpen(false);
+                    fetchCategories();
+                } else {
+                    toast.error(data.error || "Failed to update category");
+                }
             }
         } catch {
-            toast.error("Failed to update category");
+            toast.error(dialogMode === 'create' ? "Failed to create category" : "Failed to update category");
+        } finally {
+            setSubmitLoading(false);
         }
     };
 
     // Delete category
     const handleDelete = async (id: number) => {
+        setDeleteLoading(id);
         try {
             const response = await fetch(`/api/products/categories/${id}`, {
                 method: "DELETE",
@@ -159,84 +124,43 @@ export default function Categories() {
             }
         } catch {
             toast.error("Failed to delete category");
+        } finally {
+            setDeleteLoading(null);
         }
+    };
+
+    // Open create dialog
+    const openCreateDialog = () => {
+        setDialogMode('create');
+        setEditingCategory(null);
+        setFormData({ name: "" });
+        setIsDialogOpen(true);
     };
 
     // Open edit dialog
     const openEditDialog = (category: ProductCategories) => {
+        setDialogMode('edit');
         setEditingCategory(category);
         setFormData({ name: category.name });
-        setIsEditDialogOpen(true);
+        setIsDialogOpen(true);
     };
 
     return (
-        <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                        orientation="vertical"
-                        className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/admins/products">
-                                    Products
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Product Categories</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </header>
-
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Package className="h-5 w-5" />
-                        <h1 className="text-2xl font-semibold">Product Categories</h1>
+        <section className="px-2 md:px-3 py-2">
+            <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card rounded-md border gap-4">
+                    <div className="flex flex-col">
+                        <h1 className="text-xl sm:text-2xl font-bold mb-2">Products Category</h1>
+                        <p className="text-sm text-muted-foreground">Kelola products category anda</p>
                     </div>
 
-                    <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Category
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Create New Category</DialogTitle>
-                                <DialogDescription>
-                                    Add a new product category to organize your products.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={handleCreate}>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name">Category Name</Label>
-                                        <Input
-                                            id="name"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ name: e.target.value })}
-                                            placeholder="Enter category name"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit">Create Category</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    <Button
+                        onClick={openCreateDialog}
+                        disabled={submitLoading || deleteLoading !== null}
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Category
+                    </Button>
                 </div>
 
                 <div className="rounded-md border">
@@ -279,34 +203,16 @@ export default function Categories() {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => openEditDialog(category)}
+                                                    disabled={submitLoading || deleteLoading !== null}
                                                 >
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="outline" size="sm">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Are you sure you want to delete &quot;{category.name}&quot;?
-                                                                This action cannot be undone and will fail if the category is being used by any products.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleDelete(category.id)}
-                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                            >
-                                                                Delete
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <DeleteModal
+                                                    category={category}
+                                                    onDelete={handleDelete}
+                                                    deleteLoading={deleteLoading}
+                                                    disabled={submitLoading || deleteLoading !== null}
+                                                />
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -316,38 +222,17 @@ export default function Categories() {
                     </Table>
                 </div>
 
-                {/* Edit Dialog */}
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Edit Category</DialogTitle>
-                            <DialogDescription>
-                                Update the category information.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleUpdate}>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="edit-name">Category Name</Label>
-                                    <Input
-                                        id="edit-name"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ name: e.target.value })}
-                                        placeholder="Enter category name"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit">Update Category</Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                {/* Form Modal */}
+                <FormModal
+                    isOpen={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    mode={dialogMode}
+                    formData={formData}
+                    onFormDataChange={setFormData}
+                    onSubmit={handleSubmit}
+                    submitLoading={submitLoading}
+                />
             </div>
-        </SidebarInset>
+        </section>
     );
 }

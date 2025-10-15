@@ -4,6 +4,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 import { createAdminServerClient } from "@/lib/supabase";
 
+import crypto from "crypto";
+
 // GET - Fetch all products
 export async function GET() {
   try {
@@ -94,6 +96,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const productUid = crypto.randomUUID();
+
     const { data: product, error } = await supabase
       .from("products")
       .insert([
@@ -109,7 +113,8 @@ export async function POST(request: NextRequest) {
           category_id: category_id || null,
           size_id: size_id || null,
           barcode: barcode || null,
-          uid,
+          uid: productUid,
+          created_by: uid,
           // Tambahan penting
           sku: sku || null,
           min_stock: min_stock ? parseInt(min_stock) : 0,

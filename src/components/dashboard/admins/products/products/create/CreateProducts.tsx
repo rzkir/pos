@@ -2,19 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-
-import { Separator } from "@/components/ui/separator";
-
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -54,7 +41,7 @@ export default function CreateProducts() {
 
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-    const [locations, setLocations] = useState<Location[]>([]);
+    const [locations, setLocations] = useState<Branch[]>([]);
 
     const [submitting, setSubmitting] = useState(false);
 
@@ -106,7 +93,7 @@ export default function CreateProducts() {
                 fetch("/api/products/categories"),
                 fetch("/api/products/sizes"),
                 fetch("/api/products/suppliers"),
-                fetch("/api/locations"),
+                fetch("/api/branch"),
             ]);
 
             const [categoriesData, sizesData, suppliersData, locationsData] = await Promise.all([
@@ -129,7 +116,7 @@ export default function CreateProducts() {
             }
 
             if (locationsRes.ok) {
-                setLocations(locationsData.locations || []);
+                setLocations(locationsData.branch || []);
             }
         } catch {
             toast.error("Failed to fetch data");
@@ -303,10 +290,15 @@ export default function CreateProducts() {
                 finalFormData.sku = `SKU${lastSix}${randomTwo}`;
             }
 
-            // Coerce numeric fields to numbers before sending
-            finalFormData.price = String(finalFormData.price || "");
-            finalFormData.modal = String(finalFormData.modal || "");
-            finalFormData.stock = String(finalFormData.stock || "");
+            // Parse required numeric fields
+            const parsedPrice = parseFloat((finalFormData.price as unknown as string) || '');
+            const parsedModal = parseFloat((finalFormData.modal as unknown as string) || '');
+            const parsedStock = parseInt((finalFormData.stock as unknown as string) || '', 10);
+
+            if (Number.isNaN(parsedPrice) || Number.isNaN(parsedModal) || Number.isNaN(parsedStock)) {
+                toast.error("Price, modal, dan stock harus berupa angka yang valid");
+                return;
+            }
 
             // Upload image if selected
             if (selectedImage) {
@@ -329,21 +321,42 @@ export default function CreateProducts() {
             const { data: auth } = await supabase.auth.getUser();
             const uid = auth.user?.id;
 
+            // Build payload with required fields only; add optionals when provided
+            const payload: Record<string, unknown> = {
+                name: finalFormData.name.trim(),
+                price: parsedPrice,
+                modal: parsedModal,
+                stock: parsedStock,
+                unit: finalFormData.unit || 'pcs',
+                uid,
+            };
+
+            if (finalFormData.image_url) payload.image_url = finalFormData.image_url;
+            if (finalFormData.category_id) payload.category_id = parseInt(finalFormData.category_id, 10);
+            if (finalFormData.size_id) payload.size_id = parseInt(finalFormData.size_id, 10);
+            if (finalFormData.barcode && finalFormData.barcode.trim() !== '') payload.barcode = finalFormData.barcode.trim();
+
+            // Additional Information (optional)
+            if (finalFormData.sku && finalFormData.sku.trim() !== '') payload.sku = finalFormData.sku.trim();
+            if (finalFormData.min_stock !== "" && finalFormData.min_stock !== null)
+                payload.min_stock = parseInt(finalFormData.min_stock as unknown as string, 10);
+            if (finalFormData.discount !== "" && finalFormData.discount !== null)
+                payload.discount = parseFloat(finalFormData.discount as unknown as string);
+            if (finalFormData.tax !== "" && finalFormData.tax !== null)
+                payload.tax = parseFloat(finalFormData.tax as unknown as string);
+            if (finalFormData.description && finalFormData.description.trim() !== '')
+                payload.description = finalFormData.description.trim();
+            if (finalFormData.supplier_id && finalFormData.supplier_id !== 'no_supplier')
+                payload.supplier_id = parseInt(finalFormData.supplier_id, 10);
+            if (finalFormData.location_id)
+                payload.location_id = parseInt(finalFormData.location_id, 10);
+            if (finalFormData.expiration_date && finalFormData.expiration_date !== '')
+                payload.expiration_date = finalFormData.expiration_date;
+
             const response = await fetch("/api/products", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...finalFormData,
-                    // ensure numeric values are numbers server-side
-                    price: parseFloat(finalFormData.price as unknown as string),
-                    stock: parseInt(finalFormData.stock as unknown as string, 10),
-                    modal: parseFloat(finalFormData.modal as unknown as string),
-                    // handle no_supplier case
-                    supplier_id: finalFormData.supplier_id === "no_supplier" ? "" : finalFormData.supplier_id,
-                    // handle location_id conversion to number
-                    location_id: finalFormData.location_id ? parseInt(finalFormData.location_id, 10) : null,
-                    uid,
-                }),
+                body: JSON.stringify(payload),
                 signal: controller.signal,
             }).catch(() => {
                 // Network-level failure or aborted
@@ -358,7 +371,7 @@ export default function CreateProducts() {
 
             if (response.ok) {
                 toast.success("Product created successfully");
-                router.push("/dashboard/admins/products/products");
+                router.push("/dashboard/admins/products");
             } else {
                 const message = (data && (data.error || data.message)) || "Failed to create product";
                 toast.error(message);
@@ -375,30 +388,7 @@ export default function CreateProducts() {
     };
 
     return (
-        <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-                <div className="flex items-center gap-2 px-4">
-                    <SidebarTrigger className="-ml-1" />
-                    <Separator
-                        orientation="vertical"
-                        className="mr-2 data-[orientation=vertical]:h-4"
-                    />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem className="hidden md:block">
-                                <BreadcrumbLink href="/dashboard/admins/products">
-                                    Products
-                                </BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator className="hidden md:block" />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>Create Product</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                </div>
-            </header>
-
+        <section>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -570,11 +560,6 @@ export default function CreateProducts() {
                                                 )}
                                             </SelectContent>
                                         </Select>
-                                        {categories.length === 0 && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Tidak ada data category. <Link href="/dashboard/admins/products/categories" className="underline underline-offset-4">Tambah category</Link>
-                                            </p>
-                                        )}
                                     </div>
 
                                     <div className="grid gap-3 w-full">
@@ -771,7 +756,7 @@ export default function CreateProducts() {
                                                             </SelectItem>
                                                         ) : (
                                                             locations.map((location) => (
-                                                                <SelectItem key={location.id} value={location.id.toString()}>
+                                                                <SelectItem key={location.id} value={location.id?.toString()}>
                                                                     {location.name} {location.code && `(${location.code})`}
                                                                 </SelectItem>
                                                             ))
@@ -891,6 +876,6 @@ export default function CreateProducts() {
                     </CardContent>
                 </Card>
             </div>
-        </SidebarInset>
+        </section>
     );
 }

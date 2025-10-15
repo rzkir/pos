@@ -1,15 +1,23 @@
 "use client"
 
 import * as React from "react"
+
 import { Slot } from "@radix-ui/react-slot"
+
 import { cva, VariantProps } from "class-variance-authority"
+
 import { PanelLeftIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+
 import { cn } from "@/lib/utils"
+
 import { Button } from "@/components/ui/button"
+
 import { Input } from "@/components/ui/input"
+
 import { Separator } from "@/components/ui/separator"
+
 import {
   Sheet,
   SheetContent,
@@ -17,7 +25,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+
 import { Skeleton } from "@/components/ui/skeleton"
+
 import {
   Tooltip,
   TooltipContent,
@@ -25,24 +35,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
-const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
-type SidebarContextProps = {
-  state: "expanded" | "collapsed"
-  open: boolean
-  setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
-  toggleSidebar: () => void
-}
-
-const SidebarContext = React.createContext<SidebarContextProps | null>(null)
+const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_WIDTH = "16rem";
+const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_WIDTH_ICON = "3rem";
+const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 function useSidebar() {
   const context = React.useContext(SidebarContext)
@@ -569,7 +569,7 @@ function SidebarMenuAction({
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
       {...props}

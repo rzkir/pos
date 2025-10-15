@@ -9,15 +9,8 @@ export const metadata: Metadata = {
     description: 'Create Products untuk sistem Point of Sale',
 }
 
-interface PageProps {
-    params: Promise<{
-        id: string;
-    }>;
-}
-
-export default async function page({ params }: PageProps) {
-    const { id } = await params
+export default function page() {
     return (
-        <CreateProducts id={id} />
+        <CreateProducts />
     )
 }

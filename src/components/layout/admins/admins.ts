@@ -5,8 +5,7 @@ export const adminsNav = [
     title: "Dashboard",
     url: "/dashboard/admins",
     icon: SquareTerminal,
-    isActive: true,
-    items: [{ title: "Ringkasan", url: "/dashboard/admins" }],
+    items: [{ title: "Dashboard", url: "/dashboard/admins" }],
   },
 
   {
@@ -24,7 +23,10 @@ export const adminsNav = [
     url: "/dashboard/admins/products",
     icon: Package,
     items: [
-      { title: "Daftar Produk", url: "/dashboard/admins/products/products" },
+      {
+        title: "Daftar Produk",
+        url: "/dashboard/admins/products",
+      },
       { title: "Kategori", url: "/dashboard/admins/products/categories" },
       { title: "Size", url: "/dashboard/admins/products/size" },
       { title: "Supplier", url: "/dashboard/admins/products/suppliers" },
@@ -36,7 +38,7 @@ export const adminsNav = [
     url: "/dashboard/admins/settings",
     icon: Settings2,
     items: [
-      { title: "Profile", url: "/dashboard/admins/settings/profile" },
+      { title: "Profile", url: "/dashboard/admins/settings" },
       { title: "Company", url: "/dashboard/admins/settings/company" },
       { title: "Branches", url: "/dashboard/admins/settings/branches" },
       { title: "Karyawan", url: "/dashboard/admins/settings/karyawan" },

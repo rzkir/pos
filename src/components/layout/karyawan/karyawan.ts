@@ -5,7 +5,6 @@ export const karyawanNav = [
     title: "Beranda",
     url: "/dashboard/karyawan",
     icon: SquareTerminal,
-    isActive: true,
     items: [{ title: "Ringkasan", url: "/dashboard/karyawan" }],
   },
   {

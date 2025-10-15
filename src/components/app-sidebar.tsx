@@ -13,8 +13,6 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 
-import { NavProjects } from "@/components/nav-projects"
-
 import { NavUser } from "@/components/nav-user"
 
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -46,17 +44,17 @@ const data = {
 
   teams: [
     {
-      name: "Acme Inc",
+      name: "Company",
       logo: GalleryVerticalEnd,
       plan: "Enterprise",
     },
     {
-      name: "Acme Corp.",
+      name: "Branches.",
       logo: AudioWaveform,
       plan: "Startup",
     },
     {
-      name: "Evil Corp.",
+      name: "Karyawan.",
       logo: Command,
       plan: "Free",
     },
@@ -115,7 +113,6 @@ export function AppSidebar({ role, ...props }: React.ComponentProps<typeof Sideb
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navForRole} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={navUserData} />

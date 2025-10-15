@@ -1,11 +1,17 @@
-import { SquareTerminal, Settings2, ShoppingCart, Package, Users, BarChart3 } from "lucide-react";
+import {
+  SquareTerminal,
+  Settings2,
+  ShoppingCart,
+  Package,
+  Users,
+  BarChart3,
+} from "lucide-react";
 
 export const managerNav = [
   {
     title: "Dashboard",
     url: "/dashboard/manager",
     icon: SquareTerminal,
-    isActive: true,
     items: [{ title: "Ringkasan", url: "/dashboard/manager" }],
   },
 
