@@ -2,15 +2,15 @@ import React from 'react'
 
 import { Metadata } from 'next'
 
-import Categories from '@/components/dashboard/admins/products/categories/Categories'
+import ProfileLayout from '@/components/dashboard/admins/settings/profile/ProfileLayout'
 
 export const metadata: Metadata = {
-    title: 'Kategori Produk | POS System',
-    description: 'Kelola kategori produk untuk sistem Point of Sale',
+    title: 'Profile | POS System',
+    description: 'Kelola profile untuk sistem Point of Sale',
 }
 
 export default function page() {
     return (
-        <Categories />
+        <ProfileLayout />
     )
 }
